@@ -339,7 +339,8 @@ public abstract class MessageRouter {
 //					+" "+ incoming.getHops()
 //					+" "+"消息创建时间："+"  "+ incoming.getCreationTime()+"  "+"消息接收时间："+"  "+ incoming.getReceiveTime());
 		
-//		System.out.println("当前节点缓存为："+this.host.getFileBuffer());
+//		System.out.println("当前节点："+"  "+this.getHost()+"   "+"消息剩余重传次数："+incoming.getProperty(RETRANS_TIME)+ "  "
+//			+"消息ID："+"  "+incoming.getId()+" "+"源节点："+incoming.getFrom()+"  "+"目的节点："+incoming.getTo());
 		
 		incoming.setReceiveTime(SimClock.getTime());					//设置消息接收时间		
 
@@ -364,10 +365,7 @@ public abstract class MessageRouter {
 			// when dtnHost receive the message, the retransmission time should be updated
 		    Settings s = new Settings("Interface");
 		    int time = s.getInt("reTransmitTime");
-		    
-		    System.out.println("before the reset: " + "消息ID："+aMessage.getId()+"  "+ "重传次数：" + aMessage.getProperty(RETRANS_TIME));
 		    aMessage.updateProperty(RETRANS_TIME, time);
-		    System.out.println("after the reset: " + "消息ID："+aMessage.getId()+"  "+ "重传次数：" + aMessage.getProperty(RETRANS_TIME));
 		    
 			addToMessages(aMessage, false);      
 			if(incoming.getProperty(SelectLabel)!=null){	// 是否使用缓存功能
@@ -376,9 +374,6 @@ public abstract class MessageRouter {
 		}	
 		else if (isFirstDelivery) {							// 这是目的节点且是第一次到达
 			this.deliveredMessages.put(id, aMessage);	
-		    
-			System.out.println("到达目的节点: " + "消息ID："+aMessage.getId()+"  "+ "重传次数：" + aMessage.getProperty(RETRANS_TIME));
-		    
 			if(incoming.getProperty(SelectLabel)!=null){	// 是否使用缓存功能
 				this.getHost().getCacheRouter().DestinationCache(aMessage);
 			}

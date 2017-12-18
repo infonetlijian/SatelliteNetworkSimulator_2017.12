@@ -35,6 +35,8 @@ public class SimpleSatelliteInterface extends NetworkInterface {
 	public static final String interfaceType = "RadioInterface";
 	/** radio interface transmitSpeed*/
 	private int radioTransmitSpeed;
+	/**¡¡radio interface tansmitRange in km */
+	private double radioTransmitRange;
 	
 	
 	/**
@@ -43,6 +45,7 @@ public class SimpleSatelliteInterface extends NetworkInterface {
 	public SimpleSatelliteInterface(Settings s)	{
 		super(s);
 		this.radioTransmitSpeed = s.getInt("RadioLinkTransmitSpeed");
+		this.radioTransmitRange = s.getInt("RadioLinkTransmitRange");
 	}
 		
 	/**
@@ -52,6 +55,7 @@ public class SimpleSatelliteInterface extends NetworkInterface {
 	public SimpleSatelliteInterface(SimpleSatelliteInterface ni) {
 		super(ni);
 		this.radioTransmitSpeed = ni.getTransmitSpeed();
+		this.radioTransmitRange = ni.getTransmitRange();
 	}
 
 	public NetworkInterface replicate()	{
@@ -220,7 +224,14 @@ public class SimpleSatelliteInterface extends NetworkInterface {
 	public int getTransmitSpeed() {
 		return this.radioTransmitSpeed;
 	}
-	
+	/**
+	 * return the transmit range of this interface
+	 */
+	@Override
+	public double getTransmitRange(){
+		return this.radioTransmitRange;
+	}
+	@Override
 	public String getInterfaceType(){
 		return this.interfaceType;
 	}

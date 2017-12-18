@@ -373,6 +373,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	protected boolean isWithinRange(NetworkInterface anotherInterface) {
 		double smallerRange = anotherInterface.getTransmitRange();
 		double myRange = getTransmitRange();
+		System.out.println("链路类型："+this.getInterfaceType()+"  "+"本地接口传输范围："+myRange+"  "+"另一端接口传输范围："+smallerRange);
 		if (myRange < smallerRange) {
 			smallerRange = myRange;
 		}

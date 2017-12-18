@@ -1,15 +1,2 @@
 title = MessageDelayReport# 横纵坐标标题 中间用=分开xlabel = MessageDelayylabel = CumulativeProbabilitybelow is the data# messageDelay  cumulativeProbability
-3.0000 0.0154
-3.0000 0.0308
-3.0000 0.0462
-3.0000 0.0615
-5.0000 0.0769
-6.0000 0.0923
-6.0000 0.1077
-9.0000 0.1231
-9.0000 0.1385
-9.0000 0.1538
-9.0000 0.1692
-10.0000 0.1846
-11.0000 0.2000
-14.0000 0.2154
+# no messages delivered in sim time 2.0000

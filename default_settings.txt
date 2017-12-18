@@ -27,9 +27,11 @@ Group.filebuffersize = 1000k
 # 微波链路建链延时设置，double型，单位为s
 Interface.RadioLinkDelay = 0.1
 Interface.RadioLinkTransmitSpeed = 500k
+Interface.RadioLinkTransmitRange = 3000
 # 激光链路建链延时设置，double型，单位为s
 Interface.LaserLinkDelay = 100
 Interface.LaserLinkTransmitSpeed = 500M
+Interface.LaserLinkTransmitRange = 10000
 # 链路中断概率
 Interface.enableInterrupt = true
 Interface.probabilityOfInterrupt = 0.1

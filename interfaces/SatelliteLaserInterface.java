@@ -23,6 +23,8 @@ public class SatelliteLaserInterface  extends NetworkInterface {
 	public static final String interfaceType = "LaserInterface";
 	/** laser interface transmitSpeed*/
 	private int laserTransmitSpeed;
+	/**¡¡radio interface tansmitRange in km */
+	private double LaserTransmitRange;
 
 	/**
 	 * Reads the interface settings from the Settings file
@@ -30,6 +32,7 @@ public class SatelliteLaserInterface  extends NetworkInterface {
 	public SatelliteLaserInterface(Settings s)	{
 		super(s);
 		this.laserTransmitSpeed = s.getInt("LaserLinkTransmitSpeed");
+		this.LaserTransmitRange = s.getInt("LaserLinkTransmitRange");
 	}
 		
 	/**
@@ -39,6 +42,7 @@ public class SatelliteLaserInterface  extends NetworkInterface {
 	public SatelliteLaserInterface(SatelliteLaserInterface ni) {
 		super(ni);
 		this.laserTransmitSpeed = ni.getTransmitSpeed();
+		this.LaserTransmitRange = ni.getTransmitRange();
 	}
 
 	public NetworkInterface replicate()	{
@@ -156,7 +160,7 @@ public class SatelliteLaserInterface  extends NetworkInterface {
 	public String toString() {
 		return "SatelliteLaserInterface " + super.toString();
 	}
-
+	
 	/**
 	 * Returns the transmit speed of this network layer
 	 * @return the transmit speed
@@ -165,7 +169,15 @@ public class SatelliteLaserInterface  extends NetworkInterface {
 	public int getTransmitSpeed() {
 		return this.laserTransmitSpeed;
 	}
-
+	
+	/** return the transmit range of this interface */
+	@Override
+	public double getTransmitRange(){
+		return this.LaserTransmitRange;
+	}
+	
+	/** return the type of this interface */
+	@Override
 	public String getInterfaceType(){
 		return this.interfaceType;
 	}
