@@ -63,6 +63,10 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
      * according to this message size threshold， -setting id ({@value})
      */
     public static final String MSG_SIZE_THRESHOLD_S = "MessageThreshold";
+    /** indicates the type of link*/
+    public static final String LASER_LINK = "LaserInterface";
+    /** indicates the type of link*/
+	public static final String RADIO_LINK = "RadioInterface";
     /** light speed，approximate 3*10^8m/s */
     private static final double LIGHTSPEED = 299792458;
 
@@ -72,7 +76,8 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     private static boolean msgPathLabel;
     /** indicates the TTL of confirm message -setting id ({@value} */
     private static int confirmTtl;
-    /** the message size threshold, decides the message transmitted through radio link or laser link -setting id ({@value}*/
+    /** the message size threshold, decides the message transmitted 
+     *  through radio link or laser link -setting id ({@value}*/
     private static int msgThreshold;
     
     /** label indicates that the static routing parameters are set or not */
@@ -200,9 +205,9 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
             //TODO deal with isolate LEO node
             return; // for isolate LEO node, it does noting
         }
-        if (isTransferring()) { // judge the link is occupied or not
-            return; // can't start a new transfer
-        }
+//        if (isTransferring()) { // judge the link is occupied or not
+//            return; // can't start a new transfer
+//        }
         //helloProtocol();//执行hello包的维护工作
         if (!canStartTransfer())
             return;
@@ -962,8 +967,7 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
             case "LEO":{
                 //目的节点是否在自身所属轨道平面上
             	//System.out.println(this.getHost()+" 同一轨道平面内节点 : "+LEOci.getAllHostsInSamePlane());
-                if (LEOci.getAllHostsInSamePlane().contains(to)){
-                	//System.out.println("同一轨道平面!");
+                if (LEOci.getAllHostsInSamePlane().contains(to)){                	
                     chooseOneNeighborHostToSendInSamePlane(msg, to);
                 }
                 else{
@@ -987,11 +991,15 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
                 for (Connection con : this.getConnections()){
                     if (con.getOtherNode(this.getHost()).equals(to))
                         desConnection = con;
-                    if (con.getOtherNode(this.getHost()).getSatelliteType().contains("MEO"))
+                    if (con.getOtherNode(this.getHost()).getSatelliteType().contains("MEO")
+                    		&& isRightConnection(msg, con))
                         MEOConnectionList.add(con);
                 }
-                if (MEOConnectionList.isEmpty())
+                if (MEOConnectionList.isEmpty()){
+                	//TODO
+                	System.out.println(this.getHost()+"  本LEO节点孤立，没有被MEO覆盖");
                 	break;
+                }
                 //目的作为MEO节点，先检查是否在通信范围之内可以直接转发
                 if (desConnection != null){
                     DTNHost nextHop = desConnection.getOtherNode(this.getHost());
@@ -1054,8 +1062,10 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     public void msgFromLEOForwardedByMEO(Message msg, DTNHost to){
     	LEOclusterInfo LEOci = this.getSatelliteLinkInfo().getLEOci();
     	
-    	if (LEOci.getManageHosts().isEmpty())
+    	if (LEOci.updateManageHosts(msg).isEmpty()){
+            System.out.println(this.getHost()+" LEO 孤立！  "+msg);
     		return;
+    	}
     	if (((SatelliteMovement)to.getMovementModel()).getSatelliteLinkInfo().getLEOci() == null){
     		System.out.println(" not initiliation LEOci!"+to);
     		throw new SimError("not initiliation LEOci!");
@@ -1064,9 +1074,8 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     	
     	/**采用最短路径搜索算法的变种来找最优路径**/
         //获取LEO通过MEO网络到达目的LEO的拓扑
-        //getLEOtoLEOThroughMEOTopology(this.getHost(), to);
         //改造的最短路径算法，用于特殊场景，需要指定出发源节点，并给定网络拓扑
-        shortestPathSearch(msg, this.getHost(), getLEOtoLEOThroughMEOTopology(this.getHost(), to));
+        shortestPathSearch(msg, this.getHost(), getLEOtoLEOThroughMEOTopology(msg, this.getHost(), to));
     	/**采用最短路径搜索算法的变种来找最优路径**/
     	
     	if (this.routerTable.containsKey(to)){
@@ -1075,8 +1084,8 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     	}
     	
     	System.out.println("转交给MEO节点进行转发   to" + to);
-        int nrofManageHosts = LEOci.getManageHosts().size();
-        DTNHost nextHop = LEOci.getManageHosts().get(random.nextInt(nrofManageHosts));//随机选取一个MEO管理节点帮助转发
+        int nrofManageHosts = LEOci.updateManageHosts(msg).size();
+        DTNHost nextHop = LEOci.updateManageHosts(msg).get(random.nextInt(nrofManageHosts));//随机选取一个MEO管理节点帮助转发
 
         if (nextHop != null){
             List<Tuple<Integer, Boolean>> path =
@@ -1098,8 +1107,8 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
             case "LEO":{
                 //找到管理此节点的MEO节点，交于它进行转发
             	/**采用最短路径搜索算法的变种来找最优路径**/          
-                HashMap<DTNHost, List<DTNHost>> topologyInfo = getGEOtoLEOTopology(this.getHost(), to);//optimizedTopologyCalculation(MEOci.MEOList);//localTopologyCalculation(MEOci.MEOList);          
-                List<DTNHost> manageHosts = ((SatelliteMovement)to.getMovementModel()).getSatelliteLinkInfo().getLEOci().getManageHosts();              
+                HashMap<DTNHost, List<DTNHost>> topologyInfo = getGEOtoLEOTopology(msg, this.getHost(), to);//optimizedTopologyCalculation(MEOci.MEOList);//localTopologyCalculation(MEOci.MEOList);          
+                List<DTNHost> manageHosts = ((SatelliteMovement)to.getMovementModel()).getSatelliteLinkInfo().getLEOci().updateManageHosts(msg);              
                 //目的节点没有管理节点可达,则直接跳出
                 if (manageHosts.isEmpty()){
                 	System.out.println(to+" has no manage hosts! then "+msg+" transmission failed!");
@@ -1159,11 +1168,11 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
                 }
                 //否则找到管理此节点的MEO节点，交于它进行转发
             	/**采用最短路径搜索算法的变种来找最优路径**/          
-                HashMap<DTNHost, List<DTNHost>> topologyInfo = getMEOtoLEOTopology(this.getHost(), to);//optimizedTopologyCalculation(MEOci.MEOList);//localTopologyCalculation(MEOci.MEOList);          
-                List<DTNHost> manageHosts = ((SatelliteMovement)to.getMovementModel()).getSatelliteLinkInfo().getLEOci().getManageHosts();              
+                HashMap<DTNHost, List<DTNHost>> topologyInfo = getMEOtoLEOTopology(msg, this.getHost(), to);//optimizedTopologyCalculation(MEOci.MEOList);//localTopologyCalculation(MEOci.MEOList);          
+                List<DTNHost> manageHosts = ((SatelliteMovement)to.getMovementModel()).getSatelliteLinkInfo().getLEOci().updateManageHosts(msg);              
                 //目的节点没有管理节点可达,则直接跳出
                 if (manageHosts.isEmpty()){
-                	System.out.println(to+" has no manage hosts! ");
+                	System.out.println("  "+to+" has no manage hosts! ");
                 	return;
                 }
                 //调用搜索算法
@@ -1213,15 +1222,15 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
      * @param endMEO   目的节点
      * @return
      */
-    public HashMap<DTNHost, List<DTNHost>> getLEOtoLEOThroughMEOTopology(DTNHost startLEO, DTNHost endLEO){
+    public HashMap<DTNHost, List<DTNHost>> getLEOtoLEOThroughMEOTopology(Message msg, DTNHost startLEO, DTNHost endLEO){
     	HashMap<DTNHost, List<DTNHost>> topologyInfo = new HashMap<DTNHost, List<DTNHost>>();
     	
     	//如果是动态分簇路由会执行更新操作，如果是静态分簇路由则直接返回事先规定的MEO管理节点
     	List<DTNHost> manageHosts = ((SatelliteMovement)endLEO.getMovementModel()).
-    			getSatelliteLinkInfo().getLEOci().updateManageHosts();
+    			getSatelliteLinkInfo().getLEOci().updateManageHosts(msg);
     	if (manageHosts.isEmpty())
     		return topologyInfo;//返回为空
-    	topologyInfo = getMEOtoLEOTopology(manageHosts.get(0), endLEO);
+    	topologyInfo = getMEOtoLEOTopology(msg, manageHosts.get(0), endLEO);
     	
     	for (DTNHost MEO : manageHosts){
     		List<DTNHost> list = topologyInfo.get(MEO);  	
@@ -1352,7 +1361,7 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
      * @param endMEO   目的LEO节点
      * @return
      */
-    public HashMap<DTNHost, List<DTNHost>> getGEOtoLEOTopology(DTNHost sGEO, DTNHost endLEO){
+    public HashMap<DTNHost, List<DTNHost>> getGEOtoLEOTopology(Message msg, DTNHost sGEO, DTNHost endLEO){
     	HashMap<DTNHost, List<DTNHost>> topologyInfo = new HashMap<DTNHost, List<DTNHost>>();
     	LEOclusterInfo endLEOci = ((SatelliteMovement)endLEO.getMovementModel()).getSatelliteLinkInfo().getLEOci();
     	GEOclusterInfo sGEOci = ((SatelliteMovement)sGEO.getMovementModel()).getSatelliteLinkInfo().getGEOci();
@@ -1369,7 +1378,7 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
             }
     	}	
     	//拓扑中添加MEO到目的LEO的链路
-    	for (DTNHost MEO : endLEOci.updateManageHosts()){
+    	for (DTNHost MEO : endLEOci.updateManageHosts(msg)){
     		List<DTNHost> list = topologyInfo.get(MEO);  	
             if (list == null) {
             	list = new ArrayList<DTNHost>();
@@ -1429,14 +1438,14 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
      * @param endMEO   目的LEO节点
      * @return
      */
-    public HashMap<DTNHost, List<DTNHost>> getMEOtoLEOTopology(DTNHost sMEO, DTNHost endLEO){
+    public HashMap<DTNHost, List<DTNHost>> getMEOtoLEOTopology(Message msg, DTNHost sMEO, DTNHost endLEO){
     	HashMap<DTNHost, List<DTNHost>> topologyInfo = new HashMap<DTNHost, List<DTNHost>>();
     	LEOclusterInfo endLEOci = ((SatelliteMovement)endLEO.getMovementModel()).getSatelliteLinkInfo().getLEOci();
     	
     	topologyInfo = getMEOtoMEOTopology(sMEO);
     	
     	//拓扑中添加MEO到目的LEO的链路
-    	for (DTNHost MEO : endLEOci.updateManageHosts()){
+    	for (DTNHost MEO : endLEOci.updateManageHosts(msg)){
     		List<DTNHost> list = topologyInfo.get(MEO);  	
             if (list == null) {
             	list = new ArrayList<DTNHost>();
@@ -1536,7 +1545,7 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
         
         for (Connection c : connections) {
             if (c.getOtherNode(this.getHost()).getAddress() == address 
-            		&& c.getLinkType().contains(connectionType)) {           	
+            		&& isRightConnection(msg, c)) {    
                 return c;
             }
         }
@@ -1694,5 +1703,19 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     			MEOHosts.add(h);
     	}
     	return MEOHosts;
+    }
+    /**
+     * if the connection type is the matched with this type of message
+     * @param msg
+     * @param con
+     * @return
+     */
+    public boolean isRightConnection(Message msg, Connection con){
+    	if (msg.getSize() > msgThreshold && con.getLinkType().contains(LASER_LINK))
+    		return true;
+    	if (msg.getSize() <= msgThreshold && con.getLinkType().contains(RADIO_LINK))
+    		return true;
+    	
+    	return false;
     }
 }
