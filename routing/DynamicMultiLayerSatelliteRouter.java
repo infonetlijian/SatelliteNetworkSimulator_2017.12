@@ -1531,7 +1531,9 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     		connectionType = "LaserLink";
     	else
     		connectionType = "RadioLink";
-    		
+    	
+//    	System.out.println("选择使用的链路类型为：" + connectionType);
+    	
         List<Connection> connections = this.getHost().getConnections();
         
         for (Connection c : connections) {
