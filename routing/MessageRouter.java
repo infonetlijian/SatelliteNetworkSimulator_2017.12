@@ -337,8 +337,8 @@ public abstract class MessageRouter {
 //					+" "+ incoming.getHops()
 //					+" "+"消息创建时间："+"  "+ incoming.getCreationTime()+"  "+"消息接收时间："+"  "+ incoming.getReceiveTime());
 		
-		System.out.println("当前节点："+"  "+this.getHost()+"   "+"消息剩余重传次数："+incoming.getProperty(RETRANS_TIME)+ "  "
-			+"消息ID："+"  "+incoming.getId()+" "+"源节点："+incoming.getFrom()+"  "+"目的节点："+incoming.getTo());
+//		System.out.println("当前节点："+"  "+this.getHost()+"   "+"消息剩余重传次数："+incoming.getProperty(RETRANS_TIME)+ "  "
+//			+"消息ID："+"  "+incoming.getId()+" "+"源节点："+incoming.getFrom()+"  "+"目的节点："+incoming.getTo());
 		
 		incoming.setReceiveTime(SimClock.getTime());					//设置消息接收时间		
 				
