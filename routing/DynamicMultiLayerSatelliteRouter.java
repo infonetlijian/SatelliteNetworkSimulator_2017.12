@@ -1533,6 +1533,7 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     		connectionType = "RadioLink";
     		
         List<Connection> connections = this.getHost().getConnections();
+        
         for (Connection c : connections) {
             if (c.getOtherNode(this.getHost()).getAddress() == address 
             		&& c.getLinkType().contains(connectionType)) {           	
@@ -1554,6 +1555,9 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
                     " at " + this);
         Message m = t.getKey();
         Connection con = t.getValue();
+        
+//        System.out.println("当前使用的链路类型为：" + con.getLinkType() + "链路传输速度为：" + con.getSpeed());
+        
         int retVal = startTransfer(m, con);
         if (retVal == RCV_OK) {  //accepted a message, don't try others
             return m;

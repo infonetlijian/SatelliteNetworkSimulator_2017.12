@@ -28,12 +28,7 @@ public class CBRConnection extends Connection {
 		super(fromNode, fromInterface, toNode, toInterface);
 		this.speed = connectionSpeed;
 		this.transferDoneTime = 0;
-		
-		if (this.linkType.contains("RadioLink"))
-			this.linkDelay = this.radioLinkDelay;
-		if (this.linkType.contains("LaserLink"))
-			this.linkDelay = this.laserLinkDelay;
-		
+		this.linkDelay = fromInterface.getLinkDelay();
 	}
 
 	/**

@@ -34,22 +34,20 @@ public class SimpleSatelliteInterface extends NetworkInterface {
 	
 	/** indicates the interface type, i.e., radio or laser*/
 	public static final String interfaceType = "RadioInterface";
-	/** radio interface transmitSpeed*/
-	private int radioTransmitSpeed;
-	/**　radio interface tansmitRange in km */
-	private double radioTransmitRange;
 	/** dynamic clustering by MEO or static clustering by MEO */
 	private static boolean dynamicClustering;
-	
+	/** allConnected or clustering */
+	private String mode;
 	
 	/**
 	 * Reads the interface settings from the Settings file
 	 */
 	public SimpleSatelliteInterface(Settings s)	{
 		super(s);
-		this.radioTransmitSpeed = s.getInt("RadioLinkTransmitSpeed");
-		this.radioTransmitRange = s.getInt("RadioLinkTransmitRange");
-		dynamicClustering = s.getBoolean("DynamicClustering");
+		Settings s1 = new Settings("Interface");
+		dynamicClustering = s1.getBoolean("DynamicClustering");
+		Settings s2 = new Settings(USERSETTINGNAME_S);
+		mode = s2.getSetting(ROUTERMODENAME_S);
 	}
 		
 	/**
@@ -58,8 +56,7 @@ public class SimpleSatelliteInterface extends NetworkInterface {
 	 */
 	public SimpleSatelliteInterface(SimpleSatelliteInterface ni) {
 		super(ni);
-		this.radioTransmitSpeed = ni.getTransmitSpeed();
-		this.radioTransmitRange = ni.getTransmitRange();
+		this.mode = ni.mode;
 	}
 
 	public NetworkInterface replicate()	{
@@ -81,8 +78,8 @@ public class SimpleSatelliteInterface extends NetworkInterface {
 			// new contact within range
 			// connection speed is the lower one of the two speeds 
 			int conSpeed = anotherInterface.getTransmitSpeed();//连接两端的连接速率由较小的一个决定			
-			if (conSpeed > this.radioTransmitSpeed) {
-				conSpeed = this.radioTransmitSpeed; 
+			if (conSpeed > this.transmitSpeed) {
+				conSpeed = this.transmitSpeed; 
 			}
 
 			Connection con = new CBRConnection(this.host, this, 
@@ -139,9 +136,7 @@ public class SimpleSatelliteInterface extends NetworkInterface {
 					i++;
 			}
 		}
-		Settings s = new Settings(USERSETTINGNAME_S);
-		String mode = s.getSetting(ROUTERMODENAME_S);
-		
+
 		switch (mode) { 
 		case "AllConnected":{
 			if (!this.getHost().multiThread) {
@@ -223,8 +218,8 @@ public class SimpleSatelliteInterface extends NetworkInterface {
 		if (!isConnected(anotherInterface) && (this != anotherInterface)) {			
 			// connection speed is the lower one of the two speeds 
 			int conSpeed = anotherInterface.getTransmitSpeed();
-			if (conSpeed > this.radioTransmitSpeed) {
-				conSpeed = this.radioTransmitSpeed;
+			if (conSpeed > this.transmitSpeed) {
+				conSpeed = this.transmitSpeed;
 			}
 
 			Connection con = new CBRConnection(this.host, this, 
@@ -239,22 +234,6 @@ public class SimpleSatelliteInterface extends NetworkInterface {
 	 */
 	public String toString() {
 		return "SatelliteLaserInterface " + super.toString();
-	}
-	
-
-	/**
-	 * Returns the transmit speed of this network layer
-	 * @return the transmit speed
-	 */
-	@Override
-	public int getTransmitSpeed() {
-		return this.radioTransmitSpeed;
-	}
-	
-	/** return the transmit range of this interface */
-	@Override
-	public double getTransmitRange(){
-		return this.radioTransmitRange;
 	}
 	
 	/** return the type of this interface */

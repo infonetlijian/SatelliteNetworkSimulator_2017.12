@@ -272,7 +272,7 @@ public class ConnectivityGrid extends ConnectivityOptimizer {
 			}			
 			case "Ergodic" :{				
 				for (NetworkInterface interf : getAllInterfaces()){//相邻网格内节点的网络接口，依次检查是不是在距离范围之内
-					if (JudgeNeighbors(interf.getHost().getLocation(), c))//判断是否为邻居
+					if (JudgeNeighbors(interf, c))//判断是否为邻居
 					niList.add(interf);//确认是邻居节点的列表
 					
 				}
@@ -290,9 +290,10 @@ public class ConnectivityGrid extends ConnectivityOptimizer {
 	 * @param c2
 	 * @return
 	 */
-	public boolean JudgeNeighbors(Coord c1,Coord c2){
-		Settings s = new Settings(INTERFACENAME_S);
-		double transmitRange = s.getDouble(TRANSMIT_RANGE_S);//从配置文件中读取传输半径
+	public boolean JudgeNeighbors(NetworkInterface interf, Coord c2){
+		Coord c1 = interf.getHost().getLocation();
+		double transmitRange = interf.getTransmitRange();
+
 		double distance = c1.distance(c2);
 		if (distance <= transmitRange)
 			return true;

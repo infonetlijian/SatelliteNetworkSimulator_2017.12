@@ -409,17 +409,14 @@ public class SimScenario implements Serializable {
             for (int j = 1; j <= nrofInterfaces; j++) {
                 String Intname = s.getSetting(INTERFACENAME_S + j);
                 Settings t = new Settings(Intname);
-                
-//                System.out.println(INTTYPE_PACKAGE + t.getSetting(INTTYPE_S+j));
-                
                 NetworkInterface mmInterface =
                         (NetworkInterface) t.createIntializedObject(INTTYPE_PACKAGE +
-                                t.getSetting(INTTYPE_S+j));
-
+                                t.getSetting(INTTYPE_S));
+                
                 mmInterface.setClisteners(connectionListeners);
                 mmNetInterfaces.add(mmInterface);
             }
-
+            
             // setup applications
             if (s.contains(APPCOUNT_S)) {
                 appCount = s.getInt(APPCOUNT_S);

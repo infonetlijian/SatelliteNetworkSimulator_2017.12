@@ -72,6 +72,8 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	private int activenessJitterValue;
 	
 	/**新增参数*/
+	/** Link establishment delay */
+	protected double linkDelay;
 	protected HashMap<DTNHost,HashMap<DTNHost, double[]>> neighborsList = new HashMap<DTNHost,HashMap<DTNHost, double[]>>();//新增
 	protected HashMap<DTNHost,HashMap<DTNHost, double[]>> predictList = new HashMap<DTNHost,HashMap<DTNHost, double[]>>();
 	public HashMap<DTNHost,HashMap<DTNHost, double[]>> getNeighborsList(){//新增
@@ -108,7 +110,8 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	public NetworkInterface(Settings s) {
 		this.interfacetype = s.getNameSpace();
 		this.connections = new ArrayList<Connection>();
-
+		this.linkDelay = s.getDouble("linkDelay");	// add link delay
+		
 		this.transmitRange = s.getDouble(TRANSMIT_RANGE_S);
 		this.transmitSpeed = s.getInt(TRANSMIT_SPEED_S);
 		ensurePositiveValue(transmitRange, TRANSMIT_RANGE_S);
@@ -137,6 +140,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 		this.transmitSpeed = ni.transmitSpeed;
 		this.scanInterval = ni.scanInterval;
 		this.ah = ni.ah;
+		this.linkDelay = ni.linkDelay;
 		
 		if (ni.activenessJitterMax > 0) {
 			this.activenessJitterValue = rng.nextInt(ni.activenessJitterMax);
@@ -524,6 +528,14 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	public String toString() {
 		return "net interface " + this.address + " of " + this.host + 
 			". Connections: " +	this.connections;
+	}
+	
+	/**
+	 * Returns the transmit speed of this network layer
+	 * @return the transmit speed
+	 */
+	public double getLinkDelay() {
+		return this.linkDelay;
 	}
 
 }

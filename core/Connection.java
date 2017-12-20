@@ -25,16 +25,12 @@ public abstract class Connection {
 	/** how many bytes this connection has transferred */
 	protected int bytesTransferred;
 
-	/** static delay for construction of radio link between two nodes */
-	protected static double radioLinkDelay = -1;
-	/** static delay for construction of laser link between two nodes */
-	protected static double laserLinkDelay = -1;
 	/** indicates the link type, i.e., radio or laser */
 	protected String linkType;
 	/** probability of interrupt */
 	protected double probabilityOfInterrupt;
 	/** Whether to allow the link to be interrupted */
-	protected String InterruptEnable;
+	protected boolean InterruptEnable;
 
 	/**
 	 * Creates a new connection between nodes and sets the connection state to
@@ -57,34 +53,13 @@ public abstract class Connection {
 		this.toInterface = toInterface;
 		this.isUp = true;
 		this.bytesTransferred = 0;
-
-		// 判断是否开启中断功能
-		Settings s = new Settings("Interface");
-		InterruptEnable = s.getSetting("enableInterrupt");
-		if (InterruptEnable.indexOf("true") >= 0) {
-			this.probabilityOfInterrupt = s.getDouble("probabilityOfInterrupt");
-		}
-
-		if ((Double) this.radioLinkDelay < 0 || (Double) this.laserLinkDelay < 0) {
-			this.radioLinkDelay = s.getDouble("RadioLinkDelay");
-			this.laserLinkDelay = s.getDouble("LaserLinkDelay");
-		}
+		this.linkType = fromInterface.getInterfaceType();
 		
-		if (this.fromInterface instanceof SimpleSatelliteInterface) {
-			if (!(this.toInterface instanceof SimpleSatelliteInterface))// 传输的两个接口类型不匹配，即微波链路在与激光链路进行数据传输
-				throw new SimError(
-						"fromNode interface "
-								+ "is wrong matched with toNode interface to build a connection!");
-			this.linkType = "RadioLink";
-			return;
-		}
-		if (this.fromInterface instanceof SatelliteLaserInterface) {
-			if (!(this.toInterface instanceof SatelliteLaserInterface))// 传输的两个接口类型不匹配，即微波链路在与激光链路进行数据传输
-				throw new SimError(
-						"fromNode interface "
-								+ "is wrong matched with toNode interface to build a connection!");
-			this.linkType = "LaserLink";
-			return;
+		// Whether to use the interrupt function
+		Settings s = new Settings("Interface");
+		InterruptEnable = s.getBoolean("enableInterrupt");
+		if (InterruptEnable == true) {
+			this.probabilityOfInterrupt = s.getDouble("probabilityOfInterrupt");
 		}
 	}
 
@@ -289,16 +264,13 @@ public abstract class Connection {
 	 * configuration file
 	 */
 	public boolean RandomInterrupt() {
-		if (InterruptEnable.indexOf("true") >= 0) {
+		if (InterruptEnable == true) {
 			int temp = (int) (1 / this.probabilityOfInterrupt);
 			Random random = new Random();
 			int r = random.nextInt(temp);
-//			System.out.println(r);
 			if (r != 0) {
 				return false;
 			} else {
-//				System.out.println("链路发生中断，中断概率为：" + this.probabilityOfInterrupt 
-//						+"  "+ "中断传输的消息为：" + this.msgOnFly.getId() + "  "+temp);
 				this.abortTransfer();
 				return true;
 			}

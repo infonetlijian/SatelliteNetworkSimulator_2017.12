@@ -21,18 +21,12 @@ public class SatelliteLaserInterface  extends NetworkInterface {
 
 	/** indicates the interface type, i.e., radio or laser*/
 	public static final String interfaceType = "LaserInterface";
-	/** laser interface transmitSpeed*/
-	private int laserTransmitSpeed;
-	/**　radio interface tansmitRange in km */
-	private double LaserTransmitRange;
 
 	/**
 	 * Reads the interface settings from the Settings file
 	 */
 	public SatelliteLaserInterface(Settings s)	{
 		super(s);
-		this.laserTransmitSpeed = s.getInt("LaserLinkTransmitSpeed");
-		this.LaserTransmitRange = s.getInt("LaserLinkTransmitRange");
 	}
 		
 	/**
@@ -41,8 +35,6 @@ public class SatelliteLaserInterface  extends NetworkInterface {
 	 */
 	public SatelliteLaserInterface(SatelliteLaserInterface ni) {
 		super(ni);
-		this.laserTransmitSpeed = ni.getTransmitSpeed();
-		this.LaserTransmitRange = ni.getTransmitRange();
 	}
 
 	public NetworkInterface replicate()	{
@@ -55,6 +47,7 @@ public class SatelliteLaserInterface  extends NetworkInterface {
 	 * @param anotherInterface The interface to connect to
 	 */
 	public void connect(NetworkInterface anotherInterface) {
+		
 		if (isScanning()  
 				&& anotherInterface.getHost().isRadioActive() 
 				&& isWithinRange(anotherInterface) 
@@ -64,8 +57,8 @@ public class SatelliteLaserInterface  extends NetworkInterface {
 			// new contact within range
 			// connection speed is the lower one of the two speeds 
 			int conSpeed = anotherInterface.getTransmitSpeed();//连接两端的连接速率由较小的一个决定		
-			if (conSpeed > this.laserTransmitSpeed) {
-				conSpeed = this.laserTransmitSpeed; 
+			if (conSpeed > this.transmitSpeed) {
+				conSpeed = this.transmitSpeed; 
 			}			
 			Connection con = new CBRConnection(this.host, this, 
 					anotherInterface.getHost(), anotherInterface, conSpeed);
@@ -137,8 +130,8 @@ public class SatelliteLaserInterface  extends NetworkInterface {
 		if (!isConnected(anotherInterface) && (this != anotherInterface)) {		   			
 			// connection speed is the lower one of the two speeds 
 			int conSpeed = anotherInterface.getTransmitSpeed();
-			if (conSpeed > this.laserTransmitSpeed) {
-				conSpeed = this.laserTransmitSpeed; 
+			if (conSpeed > this.transmitSpeed) {
+				conSpeed = this.transmitSpeed; 
 			}
 
 			Connection con = new CBRConnection(this.host, this, 
@@ -153,21 +146,6 @@ public class SatelliteLaserInterface  extends NetworkInterface {
 	 */
 	public String toString() {
 		return "SatelliteLaserInterface " + super.toString();
-	}
-	
-	/**
-	 * Returns the transmit speed of this network layer
-	 * @return the transmit speed
-	 */
-	@Override
-	public int getTransmitSpeed() {
-		return this.laserTransmitSpeed;
-	}
-	
-	/** return the transmit range of this interface */
-	@Override
-	public double getTransmitRange(){
-		return this.LaserTransmitRange;
 	}
 	
 	/** return the type of this interface */

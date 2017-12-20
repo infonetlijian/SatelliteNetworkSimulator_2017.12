@@ -24,14 +24,20 @@ Group.nrofFile = 60
 Group.filebuffersize = 1000k
 #缓存相关参数
 
-# 微波链路建链延时设置，double型，单位为s
-Interface.RadioLinkDelay = 0.1
-Interface.RadioLinkTransmitSpeed = 500k
-Interface.RadioLinkTransmitRange = 7500
-# 激光链路建链延时设置，double型，单位为s
-Interface.LaserLinkDelay = 100
-Interface.LaserLinkTransmitSpeed = 500M
-Interface.LaserLinkTransmitRange = 10000
+# 链路模块配置
+# one satellite node can bind multiple interfaces
+Group.nrofInterfaces = 2
+Group.interface1 = Interface1
+Group.interface2 = Interface2
+Interface1.type = SimpleSatelliteInterface
+Interface1.linkDelay = 0.1
+Interface1.transmitSpeed = 500k
+Interface1.transmitRange = 15000
+Interface2.type = SatelliteLaserInterface
+Interface2.linkDelay = 10
+Interface2.transmitSpeed = 200M
+Interface2.transmitRange = 20000
+
 #设置阈值，大于此阈值通过激光链路走，小于此阈值的从微波链路走
 Interface.MessageThreshold = 1M
 # 链路中断概率
@@ -42,6 +48,7 @@ Interface.reTransmitTime = 2
 # 是否允许动态分簇
 Interface.DynamicClustering = true
 
+
 #分簇路由相关参数
 #clusterCheckInterval unit:seconds
 Group.clusterCheckInterval = 60
@@ -51,24 +58,23 @@ Group.comfirmMessageSize = 1
 
 # LEO卫星节点参数
 Group.nrofCommunicationNodesInEachPlane = 4
-Group.nrofLEOPlanes = 4
+Group.nrofLEOPlanes = 8
 Group.LEO_OrbitPlaneAngle = 60
 Group.LEO_Eccentricity = 0
 Group.LEO_Radius = 500
 
-### Group or userSetting should be unified
-userSetting.nrofLEOPlanes = 4
-userSetting.nrofLEO = 24
+userSetting.nrofLEOPlanes = 8
+userSetting.nrofLEO = 64
 userSetting.LEOradius = 500
 userSetting.LEOorbitPlaneAngle = 75
 userSetting.LEOeccentricity = 0
 
 # MEO卫星节点参数
-Group.EnableMEO = false
-Group.MEO_OrbitPlaneAngle = 97.8
+Group.EnableMEO = true
+Group.MEO_OrbitPlaneAngle = 60
 Group.MEO_Radius = 12000
-Group.nrofMEO = 36
-Group.nrofMEOPlane = 6
+Group.nrofMEO = 16
+Group.nrofMEOPlane = 4
 Group.MEO_Eccentricity = 0
 
 # GEO卫星节点参数
@@ -100,8 +106,7 @@ Scenario.endTime = 160
 
 # "Bluetooth" interface for all nodes
 #Interface.type = SimpleSatelliteInterface
-Interface.type1 = SimpleSatelliteInterface
-Interface.type2 = SatelliteLaserInterface
+
 
 # Transmit speed of 2 Mbps = 250kBps
 Interface.transmitSpeed = 250k
@@ -110,7 +115,7 @@ Interface.transmitSpeed = 250k
 #Interface.transmitRange = 2000
 
 # 用于建立链路测试，提高链路建立概率
-Interface.transmitRange = 8000
+Interface.transmitRange = 4000
 
 
 ## Group-specific settings:
@@ -207,10 +212,7 @@ Group.msgPathLabel = true
 
 Group.bufferSize = 1000M
 Group.waitTime = 0, 120
-# All nodes have the bluetooth interface
-Group.nrofInterfaces = 2
-Group.interface1 = Interface
-Group.interface2 = Interface
+
 
 # Walking speeds
 Group.speed = 0.5, 1.5
@@ -219,7 +221,7 @@ Group.msgTtl = 10
 
 
 #Group.nrofHosts = [10;20;30;40;50]
-Group.nrofHosts = 24
+Group.nrofHosts = 80
 
 # group1 (pedestrians) specific settings
 Group1.groupID = Node
@@ -242,7 +244,7 @@ Events1.interval = 1,1
 Events1.size = 1000k,1000k
 # range of message source/destination addresses
 #Events1.hosts = [0,9;0,19;0,29;0,39;0,49]修改，注意hosts和tohosts包括下界但不包括上界，即[0, 9)
-Events1.hosts = [0,24]
+Events1.hosts = [0,80]
 # Message ID prefix
 Events1.prefix = M
 
