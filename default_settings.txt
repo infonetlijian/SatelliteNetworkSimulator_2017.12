@@ -42,7 +42,7 @@ Interface2.transmitRange = 20000
 Interface.MessageThreshold = 1M
 # 链路中断概率
 Interface.enableInterrupt = true
-Interface.probabilityOfInterrupt = 0.05
+Interface.probabilityOfInterrupt = 0.001
 # 链路中断重传次数
 Interface.reTransmitTime = 2
 # 是否允许动态分簇
@@ -62,12 +62,7 @@ Group.nrofLEOPlanes = 8
 Group.LEO_OrbitPlaneAngle = 60
 Group.LEO_Eccentricity = 0
 Group.LEO_Radius = 500
-
-userSetting.nrofLEOPlanes = 8
-userSetting.nrofLEO = 64
-userSetting.LEOradius = 500
-userSetting.LEOorbitPlaneAngle = 75
-userSetting.LEOeccentricity = 0
+Group.nrofLEO = 64
 
 # MEO卫星节点参数
 Group.EnableMEO = true
@@ -92,7 +87,7 @@ Scenario.nrofHostGroups = 1
 ## Scenario settings
 Scenario.name = satellite network simulation
 Scenario.simulateConnections = true
-Scenario.updateInterval = 1
+Scenario.updateInterval = 0.1
 # 43200s == 12h
 Scenario.endTime = 160
 

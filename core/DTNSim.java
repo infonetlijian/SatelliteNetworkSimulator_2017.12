@@ -127,7 +127,7 @@ public class DTNSim {
 	        catch (Exception e)
 	        {
 	        }
-	        //new OneSimUI().start();   
+	        // new OneSimUI().start();   
 			new DTNSimGUI().start();
 		}
 	}

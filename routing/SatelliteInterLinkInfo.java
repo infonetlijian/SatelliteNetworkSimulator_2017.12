@@ -57,7 +57,7 @@ public class SatelliteInterLinkInfo {
     	this.sMovement = (SatelliteMovement)this.host.getMovementModel();
     	
     	//LEO
-        Settings sat = new Settings("userSetting");
+        Settings sat = new Settings("Group");
         LEO_TOTAL_SATELLITES = sat.getInt("nrofLEO");//总节点数
         LEO_TOTAL_PLANE = sat.getInt("nrofLEOPlanes");//总轨道平面数
         LEO_NROF_S_EACHPLANE = LEO_TOTAL_SATELLITES/LEO_TOTAL_PLANE;//每个轨道平面上的节点数
