@@ -62,7 +62,7 @@ Group.nrofLEOPlanes = 8
 Group.LEO_OrbitPlaneAngle = 60
 Group.LEO_Eccentricity = 0
 Group.LEO_Radius = 500
-Group.nrofLEO = 64
+Group.nrofLEO = 80
 
 # MEO卫星节点参数
 Group.EnableMEO = true
@@ -216,7 +216,7 @@ Group.msgTtl = 10
 
 
 #Group.nrofHosts = [10;20;30;40;50]
-Group.nrofHosts = 80
+Group.nrofHosts = 96
 
 # group1 (pedestrians) specific settings
 Group1.groupID = Node
@@ -239,7 +239,7 @@ Events1.interval = 1,1
 Events1.size = 1000k,1000k
 # range of message source/destination addresses
 #Events1.hosts = [0,9;0,19;0,29;0,39;0,49]修改，注意hosts和tohosts包括下界但不包括上界，即[0, 9)
-Events1.hosts = [0,80]
+Events1.hosts = [0,96]
 # Message ID prefix
 Events1.prefix = M
 

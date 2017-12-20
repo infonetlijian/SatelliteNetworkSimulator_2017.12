@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
+import movement.SatelliteMovement;
 import core.CBRConnection;
 import core.Connection;
 import core.DTNHost;
@@ -19,14 +20,31 @@ import core.SimClock;
  */
 public class SatelliteLaserInterface  extends NetworkInterface {
 
+	/** router mode in the sim -setting id ({@value})*/
+	public static final String USERSETTINGNAME_S = "userSetting";
+	/** router mode in the sim -setting id ({@value})*/
+	public static final String ROUTERMODENAME_S = "routerMode";
+	public static final String DIJSKTRA_S = "dijsktra";
+	public static final String SIMPLECONNECTIVITY_S = "simpleConnectivity";
+	
+	private Collection<NetworkInterface> interfaces;
+	
 	/** indicates the interface type, i.e., radio or laser*/
 	public static final String interfaceType = "LaserInterface";
-
+	/** dynamic clustering by MEO or static clustering by MEO */
+	private static boolean dynamicClustering;
+	/** allConnected or clustering */
+	private static String mode;
+	
 	/**
 	 * Reads the interface settings from the Settings file
 	 */
 	public SatelliteLaserInterface(Settings s)	{
 		super(s);
+		Settings s1 = new Settings("Interface");
+		dynamicClustering = s1.getBoolean("DynamicClustering");
+		Settings s2 = new Settings(USERSETTINGNAME_S);
+		mode = s2.getSetting(ROUTERMODENAME_S);
 	}
 		
 	/**
@@ -71,15 +89,19 @@ public class SatelliteLaserInterface  extends NetworkInterface {
 	 * that are out of range and creates new ones).
 	 */
 	public void update() {
+		//update the satellite link info
+		List<DTNHost> allowConnectedList = 
+				((SatelliteMovement)this.getHost().getMovementModel()).updateSatelliteLinkInfo();
 		
-		//Neighbors neighbors = this.getHost().getNeighbors();
-		
-		if (optimizer == null) {
-			return; /* nothing to do */
+		if (!this.getHost().multiThread){
+			if (optimizer == null) {
+				return; /* nothing to do */
+			}
+			
+			// First break the old ones
+			optimizer.updateLocation(this);
 		}
 		
-		// First break the old ones
-		optimizer.updateLocation(this);
 		for (int i=0; i<this.connections.size(); ) {
 			Connection con = this.connections.get(i);
 			NetworkInterface anotherInterface = con.getOtherInterface(this);
@@ -99,25 +121,68 @@ public class SatelliteLaserInterface  extends NetworkInterface {
 		}
 
 		// Then find new possible connections
-		Collection<NetworkInterface> interfaces = optimizer.getNearInterfaces(this);
-		for (NetworkInterface i : interfaces) {
-			connect(i);
-			//neighbors.addNeighbor(i.getHost());
+		switch (mode) { 
+		case "AllConnected":{
+			if (!this.getHost().multiThread) {
+				// Then find new possible connections
+				interfaces = optimizer.getNearInterfaces(this);
+			}
+			for (NetworkInterface i : interfaces) {
+				connect(i);
+			}
+			break;
 		}
-		
-		//System.out.println(this.getHost()+"  interface  "+SimClock.getTime()+" this time  "+this.connections);
-		//this.getHost().getNeighbors().updateNeighbors(this.getHost(), this.connections);//更新邻居节点数据库
-		
-		/*测试代码，保证neighbors和connections的一致性*/
-	/*	List<DTNHost> conNeighbors = new ArrayList<DTNHost>();
-		for (Connection con : this.connections){
-			conNeighbors.add(con.getOtherNode(this.getHost()));
+		case "Cluster":{
+			if (!this.getHost().multiThread) {
+				// Then find new possible connections
+				interfaces = optimizer.getNearInterfaces(this);
+			}				
+
+			for (NetworkInterface i : interfaces) {	
+				/*检查是否处在允许建链的列表当中，否则不允许建立链路*/
+				boolean allowConnection = false;
+				switch(this.getHost().getSatelliteType()){
+				/*如果在范围内的这个节点既不是同一平面内的，又不是通讯节点，就不进行连接，节省开销**/
+					case "LEO":{						
+						//LEO 只允许和MEO层建立链路
+						if (dynamicClustering && i.getHost().getSatelliteType().contains("MEO")){
+							allowConnection = true;
+							break;
+						}
+						if (allowConnectedList.contains(i.getHost()))
+							allowConnection = true;//即进行连接
+						break;
+					}
+					case "MEO":{
+						//MEO允许和LEO和GEO层建立链路
+						if (dynamicClustering && (i.getHost().getSatelliteType().contains("LEO") 
+								|| i.getHost().getSatelliteType().contains("GEO"))){
+							allowConnection = true;
+							break;
+						}
+						if (allowConnectedList.contains(i.getHost()))
+							allowConnection = true;//即进行连接
+						break;
+					}
+					case "GEO":{
+						if (i.getHost().getSatelliteType().contains("MEO")){
+							allowConnection = true;
+							break;
+						}
+						if (allowConnectedList.contains(i.getHost()))
+							allowConnection = true;//即进行连接
+						break;
+					}
+				}
+				
+				if (allowConnection){//不被置位，才进行连接
+					connect(i);
+				}
+			}
+			break;
 		}
-		for (DTNHost host : neighbors.getNeighbors()){
-			assert conNeighbors.contains(host) : "connections is no the same as neighbors";
 		}
-		
-		/*测试代码，保证neighbors和connections的一致性*/
+
 	}
 
 	
