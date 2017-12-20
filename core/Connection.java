@@ -127,7 +127,7 @@ public abstract class Connection {
 	/**
 	 * Aborts the transfer of the currently transferred message.
 	 */
-	public void abortTransfer() {
+	public void abortTransfer() {		
 		assert msgOnFly != null : "No message to abort at " + msgFromNode;
 		int bytesRemaining = getRemainingByteCount();
 

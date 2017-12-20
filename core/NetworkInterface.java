@@ -45,6 +45,9 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	/** {@link ModuleCommunicationBus} identifier for the "transmission speed" 
     variable. Value type: integer */
 	public static final String SPEED_ID = "Network.speed";
+	/** identifier for the "link delay"
+	variable. Value type: double */
+	public static final String Link_Delay_Range = "linkDelayRange";
 	
 	private static final int CON_UP = 1;
 	private static final int CON_DOWN = 2;
@@ -73,6 +76,7 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	
 	/**新增参数*/
 	/** Link establishment delay */
+	protected double[] linkDelayRange;
 	protected double linkDelay;
 	protected HashMap<DTNHost,HashMap<DTNHost, double[]>> neighborsList = new HashMap<DTNHost,HashMap<DTNHost, double[]>>();//新增
 	protected HashMap<DTNHost,HashMap<DTNHost, double[]>> predictList = new HashMap<DTNHost,HashMap<DTNHost, double[]>>();
@@ -110,7 +114,16 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	public NetworkInterface(Settings s) {
 		this.interfacetype = s.getNameSpace();
 		this.connections = new ArrayList<Connection>();
-		this.linkDelay = s.getDouble("linkDelay");	// add link delay
+		this.linkDelayRange = s.getCsvDoubles(Link_Delay_Range);
+		if(this.linkDelayRange.length == 1){
+			/* convert single value to range with 0 length */
+			this.linkDelayRange = new double[] {this.linkDelayRange[0], this.linkDelayRange[0]};
+		} else {
+			s.assertValidRange(this.linkDelayRange, Link_Delay_Range);
+		}
+		this.linkDelay = randomLinkDelay();
+		
+		System.out.println("链路类型为："+this.interfacetype + "  "+"链路时延为：" + this.linkDelay);
 		
 		this.transmitRange = s.getDouble(TRANSMIT_RANGE_S);
 		this.transmitSpeed = s.getInt(TRANSMIT_SPEED_S);
@@ -537,5 +550,14 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	public double getLinkDelay() {
 		return this.linkDelay;
 	}
-
+	
+	/**
+	 * Generates a (random) link delay
+	 * @return linkDealy
+	 */
+	protected double randomLinkDelay() {
+		double sizeDiff = linkDelayRange[0] == linkDelayRange[1] ? 0 : 
+			rng.nextDouble()*(linkDelayRange[1] - linkDelayRange[0]);
+		return linkDelayRange[0] + sizeDiff;
+	}
 }

@@ -30,19 +30,18 @@ Group.nrofInterfaces = 2
 Group.interface1 = Interface1
 Group.interface2 = Interface2
 Interface1.type = SimpleSatelliteInterface
-Interface1.linkDelay = 0.1
+Interface1.linkDelayRange = 0.1,1
 Interface1.transmitSpeed = 500k
-Interface1.transmitRange = 15000
+Interface1.transmitRange = 7500
 Interface2.type = SatelliteLaserInterface
-Interface2.linkDelay = 10
+Interface2.linkDelayRange = 10,100
 Interface2.transmitSpeed = 200M
-Interface2.transmitRange = 20000
-
-#设置阈值，大于此阈值通过激光链路走，小于此阈值的从微波链路走
+Interface2.transmitRange = 10000
+# 设置阈值，大于此阈值通过激光链路走，小于此阈值的从微波链路走
 Interface.MessageThreshold = 1M
 # 链路中断概率
 Interface.enableInterrupt = true
-Interface.probabilityOfInterrupt = 0.001
+Interface.probabilityOfInterrupt = 0.01
 # 链路中断重传次数
 Interface.reTransmitTime = 2
 # 是否允许动态分簇
@@ -58,14 +57,14 @@ Group.comfirmMessageSize = 1
 
 # LEO卫星节点参数
 Group.nrofCommunicationNodesInEachPlane = 4
-Group.nrofLEOPlanes = 8
-Group.LEO_OrbitPlaneAngle = 60
+Group.nrofLEOPlanes = 4
+Group.LEO_OrbitPlaneAngle = 6
 Group.LEO_Eccentricity = 0
 Group.LEO_Radius = 500
 Group.nrofLEO = 64
 
 # MEO卫星节点参数
-Group.EnableMEO = true
+Group.EnableMEO = false
 Group.MEO_OrbitPlaneAngle = 60
 Group.MEO_Radius = 12000
 Group.nrofMEO = 16
@@ -181,9 +180,9 @@ Group.Constellation = WalkerDelta
 #Group.router = SourceRoutingDijsktraSearchBasedonTemporalGraph
 
 #Group.router = DirectDeliveryRouter
-#Group.router = ShortestPathFirstRouter
+Group.router = ShortestPathFirstRouter
 #Group.router = OptimizedClusteringRouter
-Group.router = DynamicMultiLayerSatelliteRouter
+#Group.router = DynamicMultiLayerSatelliteRouter
 
 #分簇路由
 #Group.router = ClusteringRouter
@@ -216,7 +215,7 @@ Group.msgTtl = 10
 
 
 #Group.nrofHosts = [10;20;30;40;50]
-Group.nrofHosts = 80
+Group.nrofHosts = 24
 
 # group1 (pedestrians) specific settings
 Group1.groupID = Node
@@ -236,10 +235,10 @@ Events1.interval = 1,1
 # Message sizes (500kB - 1MB)
 
 #Events1.size = 100k,1M
-Events1.size = 1000k,1000k
+Events1.size = 10k,200k
 # range of message source/destination addresses
 #Events1.hosts = [0,9;0,19;0,29;0,39;0,49]修改，注意hosts和tohosts包括下界但不包括上界，即[0, 9)
-Events1.hosts = [0,80]
+Events1.hosts = [0,24]
 # Message ID prefix
 Events1.prefix = M
 
