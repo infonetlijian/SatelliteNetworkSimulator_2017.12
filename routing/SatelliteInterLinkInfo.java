@@ -9,16 +9,35 @@ import java.util.List;
 import movement.SatelliteMovement;
 import core.Connection;
 import core.DTNHost;
+import core.Message;
 import core.Settings;
 import core.SimError;
 import util.Tuple;
 
 public class SatelliteInterLinkInfo {
+    /**
+     * Group name in the group -setting id ({@value})
+     */
+    public static final String GROUPNAME_S = "Group";
+    /**
+     * Interface name in the group -setting id ({@value})
+     */
+    public static final String INTERFACENAME_S = "Interface";
+    /**
+     * Decides the message transmitted through radio link or laser link
+     * according to this message size threshold， -setting id ({@value})
+     */
+    public static final String MSG_SIZE_THRESHOLD_S = "MessageThreshold";
+    /** indicates the type of link*/
+    public static final String LASER_LINK = "LaserInterface";
+    /** indicates the type of link*/
+	public static final String RADIO_LINK = "RadioInterface";
+	
 	/* bind the host and this info*/
 	private DTNHost host;
 	/* bind the SatelliteMovement and this info*/
 	private SatelliteMovement sMovement;
-	
+
     /** total number of LEO satellites*/
     private static int LEO_TOTAL_SATELLITES;//总节点数
     /** total number of LEO plane*/
@@ -49,6 +68,9 @@ public class SatelliteInterLinkInfo {
     
     /** initialization label*/
     private boolean initLable = false;
+    /** the message size threshold, decides the message transmitted 
+     *  through radio link or laser link -setting id ({@value}*/
+    private static int msgThreshold;
 	/** maximum connection betweent this node and node in the neighbor plane*/
 	public int nrofAllowConnectedHostInNeighborPlane = 2;//设定邻居轨道平面最大允许的连接数
 
@@ -56,8 +78,10 @@ public class SatelliteInterLinkInfo {
     	this.host = host;
     	this.sMovement = (SatelliteMovement)this.host.getMovementModel();
     	
-    	//LEO
-        Settings sat = new Settings("Group");
+    	Settings setting = new Settings(INTERFACENAME_S);
+    	msgThreshold = setting.getInt(MSG_SIZE_THRESHOLD_S);
+    	//LEO  	
+        Settings sat = new Settings(GROUPNAME_S);
         LEO_TOTAL_SATELLITES = sat.getInt("nrofLEO");//总节点数
         LEO_TOTAL_PLANE = sat.getInt("nrofLEOPlanes");//总轨道平面数
         LEO_NROF_S_EACHPLANE = LEO_TOTAL_SATELLITES/LEO_TOTAL_PLANE;//每个轨道平面上的节点数
@@ -113,7 +137,7 @@ public class SatelliteInterLinkInfo {
                     if (this.getHost().getConnections().isEmpty())
                         return false;
                     else{
-                    	LEOci.updateManageHosts();
+                    	//LEOci.updateManageHosts();
                         return true;
                     }
                 }
@@ -322,6 +346,20 @@ public class SatelliteInterLinkInfo {
 //        }
     }
     /**
+     * if the connection type is the matched with this type of message
+     * @param msg
+     * @param con
+     * @return
+     */
+    public boolean isRightConnection(Message msg, Connection con){
+    	if (msg.getSize() > msgThreshold && con.getLinkType().contains(LASER_LINK))
+    		return true;
+    	if (msg.getSize() <= msgThreshold && con.getLinkType().contains(RADIO_LINK))
+    		return true;
+    	
+    	return false;
+    }
+    /**
      * Stores the cluster information in the LEO node
      */
     public class LEOclusterInfo{
@@ -496,7 +534,7 @@ public class SatelliteInterLinkInfo {
 
             int serialNumberOfPlane = thisHostAddress/NROF_S_EACHPLANE + 1;
             int destinationSerialNumberOfPlane = to.getAddress()/NROF_S_EACHPLANE + 1;
-            System.out.println("LEO src plane: "+serialNumberOfPlane+"LEO des plane: "+destinationSerialNumberOfPlane);
+            System.out.println(thisNode+" src plane: "+serialNumberOfPlane+"  "+to+" des plane: "+destinationSerialNumberOfPlane);
             if (abs(serialNumberOfPlane - destinationSerialNumberOfPlane) <= 1 ||
                     abs(serialNumberOfPlane - destinationSerialNumberOfPlane) >= LEO_TOTAL_PLANE){
                 int startNumber = NROF_S_EACHPLANE * (destinationSerialNumberOfPlane - 1);//此轨道平面内的节点，起始编号
@@ -551,11 +589,12 @@ public class SatelliteInterLinkInfo {
          * 获取当前通信范围内的MEO节点
          * @return
          */
-        public List<DTNHost> getConnectedMEOHosts(){
+        public List<DTNHost> getConnectedMEOHosts(Message msg){
         	List<DTNHost> list = new ArrayList<DTNHost>();
         	for (Connection con : thisNode.getConnections()){
         		DTNHost h = con.getOtherNode(thisNode);
-        		if (!list.contains(h) && h.getSatelliteType().contains("MEO"))
+        		if (!list.contains(h) && h.getSatelliteType().contains("MEO") 
+        				&& isRightConnection(msg, con))
         			list.add(h);
         	}
         	return list;
@@ -563,15 +602,15 @@ public class SatelliteInterLinkInfo {
         /**
          * update manage hosts according to connection
          */
-        public List<DTNHost> updateManageHosts(){
+        public List<DTNHost> updateManageHosts(Message msg){
         	if (sMovement.getDynamicClustering()){
             	manageHosts.clear();
-            	manageHosts.addAll(getConnectedMEOHosts());
+            	manageHosts.addAll(getConnectedMEOHosts(msg));
             	return manageHosts;
         	}
         	else{
         		List<DTNHost> MEOHosts = new ArrayList<DTNHost>(manageHosts);
-        		MEOHosts.retainAll(getConnectedMEOHosts());
+        		MEOHosts.retainAll(getConnectedMEOHosts(msg));
         		return MEOHosts;
         	}
         }

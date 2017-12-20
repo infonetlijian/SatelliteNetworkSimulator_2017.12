@@ -1,9 +1,12 @@
 Message stats for scenario satellite network simulation
+<<<<<<< HEAD
 sim_time: 25.0000
 created: 25
 started: 0
 relayed: 0
 aborted: 0
+=======
+>>>>>>> 3dc8f6abb90742fac8644ea6b45771f897c481ba
 dropped: 0
 removed: 0
 delivered: 0

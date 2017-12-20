@@ -37,7 +37,7 @@ public class SimpleSatelliteInterface extends NetworkInterface {
 	/** dynamic clustering by MEO or static clustering by MEO */
 	private static boolean dynamicClustering;
 	/** allConnected or clustering */
-	private String mode;
+	private static String mode;
 	
 	/**
 	 * Reads the interface settings from the Settings file
@@ -197,13 +197,6 @@ public class SimpleSatelliteInterface extends NetworkInterface {
 			}
 			break;
 		}
-		/*
-		 * case 3://分簇模式 Collection<NetworkInterface> interfaces_
-		 * =//无需调用optimizer
-		 * .getNearInterfaces(this)来获取邻居节点了，现在连接的建立全部放在world。java当中进行
-		 * optimizer.getNearInterfaces(this, clusterHosts, hostsOfGEO); for
-		 * (NetworkInterface i : interfaces_) { connect(i); } break;
-		 */
 		}
 
 	}
