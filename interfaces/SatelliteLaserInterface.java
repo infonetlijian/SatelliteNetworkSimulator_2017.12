@@ -64,14 +64,9 @@ public class SatelliteLaserInterface  extends NetworkInterface {
 			// new contact within range
 			// connection speed is the lower one of the two speeds 
 			int conSpeed = anotherInterface.getTransmitSpeed();//连接两端的连接速率由较小的一个决定		
-//			System.out.println("另一速度为："+conSpeed + "  "+"本网络接口的传输速度为："+this.laserTransmitSpeed);
-			
 			if (conSpeed > this.laserTransmitSpeed) {
 				conSpeed = this.laserTransmitSpeed; 
-			}
-			
-//			System.out.println("另一速度为："+conSpeed + "  "+"本网络接口的传输速度为："+this.laserTransmitSpeed);
-			
+			}			
 			Connection con = new CBRConnection(this.host, this, 
 					anotherInterface.getHost(), anotherInterface, conSpeed);
 			connect(con,anotherInterface);//会访问连接双方的host节点，把这个新生成的连接con加入连接列表中
@@ -111,8 +106,7 @@ public class SatelliteLaserInterface  extends NetworkInterface {
 		}
 
 		// Then find new possible connections
-		Collection<NetworkInterface> interfaces =
-			optimizer.getNearInterfaces(this);
+		Collection<NetworkInterface> interfaces = optimizer.getNearInterfaces(this);
 		for (NetworkInterface i : interfaces) {
 			connect(i);
 			//neighbors.addNeighbor(i.getHost());

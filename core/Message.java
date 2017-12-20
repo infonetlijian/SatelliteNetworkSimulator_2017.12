@@ -519,7 +519,7 @@ public class Message implements Comparable<Message> {
 		Message.nextUniqueId++;
 		addNodeOnPath(from);
 	}
-	/**  重写构造函数，当为响应消息时，进行调用*/
+	/**  重写构造函数，当为响应消息有数据存在时，进行调用*/
 	public Message(DTNHost from, DTNHost to, String id, int size, File Data) {	//消息初始化过程
 		this.from = from;
 		this.to = to;

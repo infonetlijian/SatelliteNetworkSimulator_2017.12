@@ -7,8 +7,10 @@ package movement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import routing.SatelliteInterLinkInfo;
 import satellite_orbit.SatelliteOrbit;
 import core.Coord;
 import core.DTNHost;
@@ -44,14 +46,67 @@ public class SatelliteMovement extends MovementModel {
     /** indicates satellite type: LEO, MEO or GEO */
     private String satelliteType;
     
+	/** Container for generic message properties. Note that all values
+	 * stored in the properties should be immutable because only a shallow
+	 * copy of the properties is made when replicating messages */
+	private Map<String, Object> properties;//设置卫星的自定义属性
+	
+	private SatelliteInterLinkInfo satelliteLinkInfo;
+
+	/** dynamic clustering by MEO or static clustering by MEO */
+	private static boolean dynamicClustering;
+	
     public SatelliteMovement(Settings settings) {
         super(settings);
+        Settings s0 = new Settings("Interface");
+		dynamicClustering = s0.getBoolean("DynamicClustering");
     }
 
     protected SatelliteMovement(SatelliteMovement rwp) {
         super(rwp);
     }
-
+    /**
+     * 在接口建立连接的时候调用，确定每个节点的连接建立
+     */
+    public List<DTNHost> updateSatelliteLinkInfo(){
+    	//同层之间允许建立的链路规则(4条链路)
+    	List<DTNHost> allowConnectedListInSameLayer = new ArrayList<DTNHost>();
+    	switch(this.getSatelliteType()){
+    	case "LEO":{
+    		if (this.satelliteLinkInfo.getLEOci() == null)
+    			break;
+    		allowConnectedListInSameLayer.addAll(this.satelliteLinkInfo.getLEOci().getAllowConnectMEOHostsInLEOSamePlane());
+    		allowConnectedListInSameLayer.addAll(this.satelliteLinkInfo.getLEOci().updateAllowConnectLEOHostsInNeighborPlane());
+    		break;
+    	}
+    	case "MEO":{
+    		if (this.satelliteLinkInfo.getMEOci() == null)
+    			break;
+    		allowConnectedListInSameLayer.addAll(this.satelliteLinkInfo.getMEOci().updateAllowConnectMEOHostsInNeighborPlane());
+    		allowConnectedListInSameLayer.addAll(this.satelliteLinkInfo.getMEOci().getAllowConnectMEOHostsInSamePlane());
+    		//添加静态分簇指定的LEO簇内节点
+        	if (!dynamicClustering){
+        		allowConnectedListInSameLayer.addAll(this.satelliteLinkInfo.getMEOci().getClusterList());
+        	}
+    		break;
+    	}
+    	case "GEO":{
+    		if (this.satelliteLinkInfo.getGEOci() == null)
+    			break;
+    		allowConnectedListInSameLayer.addAll(this.satelliteLinkInfo.getGEOci().updateAllowConnectGEOHostsInNeighborPlane());
+    		allowConnectedListInSameLayer.addAll(this.satelliteLinkInfo.getGEOci().getAllowConnectGEOHostsInSamePlane());
+    		break;
+    	}
+    	}
+    	return allowConnectedListInSameLayer;
+    }
+    /**
+     * enable dynamic clustering or static clustering for MEO
+     * @return
+     */
+    public boolean getDynamicClustering(){
+    	return this.dynamicClustering;
+    }
     /**
      * set all satellite hosts list
      *
@@ -60,7 +115,7 @@ public class SatelliteMovement extends MovementModel {
     public void setHostsList(List<DTNHost> hosts) {
         this.hosts = hosts;
     }
-
+    
     /**
      * set orbit during the initialization
      *
@@ -76,6 +131,12 @@ public class SatelliteMovement extends MovementModel {
         this.LEOtotalPlane = LEOtotalPlane;// total LEO orbit planes   
         this.nrofPlane = nrofPlane;// number of orbit plane that this satellite belongs
         this.nrofSatelliteINPlane = nrofSatelliteInPlane;// indicate which satellite in its orbit plane
+    }
+    /**
+     * @return SatelliteInterLinkInfo for getting the link information
+     */
+    public SatelliteInterLinkInfo getSatelliteLinkInfo(){
+    	return this.satelliteLinkInfo;
     }
     /**
      * @return total LEO orbit plane numbers
@@ -94,7 +155,7 @@ public class SatelliteMovement extends MovementModel {
      *
      * @param parameters
      */
-    public void setOrbitParameters(double[] parameters) {
+    public void setOrbitParameters(double[] parameters) {   	
         assert parameters.length >= 6 : "orbit parameters initialization error";
         
         this.a = parameters[0]; // sma in km
@@ -120,13 +181,32 @@ public class SatelliteMovement extends MovementModel {
             		satelliteType = "MEO";
             		break;
             	}
+            	case 3:{
+            		satelliteType = "GEO";
+            		break;
+            	}
             }
         }
-
         
-        this.satelliteOrbit = new SatelliteOrbit(orbitParameters);
+        this.satelliteOrbit = new SatelliteOrbit(orbitParameters);      
     }
-
+    /**
+     * get six orbit parameters
+     * @return
+     */
+    public double[] getOrbitParameters(){
+    	double[] op = new double[]{this.a, this.e, this.i, this.raan, this.w, this.ta};
+    	return op;		
+    }
+    /**
+     * be careful with the initialization time
+     */
+    public void initSatelliteInfo(){
+    	//此初始化函数，在SimScenario中被调用
+    	if (this.satelliteLinkInfo != null)
+    		return;
+    	this.satelliteLinkInfo = new SatelliteInterLinkInfo(this.getHost(), satelliteType);
+    }
     /**
      * get satellite coordinate in specific time
      *
@@ -273,4 +353,68 @@ public class SatelliteMovement extends MovementModel {
     public String getSatelliteType(){
     	return satelliteType;
     }
+    
+	/**
+	 * Adds a generic property for this satellite. The key can be any string but 
+	 * it should be such that no other class accidently uses the same value.
+	 * The value can be any object but it's good idea to store only immutable
+	 * objects because when message is replicated, only a shallow copy of the
+	 * properties is made.  
+	 * @param key The key which is used to lookup the value
+	 * @param value The value to store
+	 * @throws SimError if the message already has a value for the given key
+	 */
+	public void addProperty(String key, Object value) throws SimError {
+		if (this.properties != null && this.properties.containsKey(key)) {
+			/* check to prevent accidental name space collisions */
+			throw new SimError("SatelliteMovement property " + this + " already contains value " + 
+					"for a key " + key);
+		}
+		
+		this.updateProperty(key, value);
+	}
+	
+	/**
+	 * Returns an object that was stored to this property using the given
+	 * key. If such object is not found, null is returned.
+	 * @param key The key used to lookup the object
+	 * @return The stored object or null if it isn't found
+	 */
+	public Object getProperty(String key) {
+		if (this.properties == null) {
+			return null;
+		}
+		return this.properties.get(key);
+	}
+	
+	/**
+	 * Updates a value for an existing property. For storing the value first 
+	 * time, {@link #addProperty(String, Object)} should be used which
+	 * checks for name space clashes.
+	 * @param key The key which is used to lookup the value
+	 * @param value The new value to store
+	 */
+	public void updateProperty(String key, Object value) throws SimError {
+		if (this.properties == null) {
+			/* lazy creation to prevent performance overhead for classes
+			   that don't use the property feature  */
+			this.properties = new HashMap<String, Object>();
+		}		
+
+		this.properties.put(key, value);
+	}
+	
+	/**
+	 * Removes a value for an existing property. 
+	 * @param key The key which should be removed from properties
+	 */
+	public void removeProperty(String key){
+		if (this.properties == null) {
+			/* lazy creation to prevent performance overhead for classes
+			   that don't use the property feature  */
+			this.properties = new HashMap<String, Object>();
+		}	
+		this.properties.remove(key);
+		
+	}
 }

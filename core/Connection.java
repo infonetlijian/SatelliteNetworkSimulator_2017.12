@@ -293,11 +293,12 @@ public abstract class Connection {
 			int temp = (int) (1 / this.probabilityOfInterrupt);
 			Random random = new Random();
 			int r = random.nextInt(temp);
+//			System.out.println(r);
 			if (r != 0) {
 				return false;
 			} else {
 //				System.out.println("链路发生中断，中断概率为：" + this.probabilityOfInterrupt 
-//						+"  "+ "中断传输的消息为：" + this.msgOnFly.getId());
+//						+"  "+ "中断传输的消息为：" + this.msgOnFly.getId() + "  "+temp);
 				this.abortTransfer();
 				return true;
 			}

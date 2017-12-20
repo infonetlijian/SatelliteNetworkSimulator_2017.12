@@ -1,3 +1,0 @@
-# time  ID  size  fromHost  toHost  TTL  isResponse
-1.0000 null  null null  M1 Node15  Node18  初始消息名称：  M1 [Node15] 消息创建时间：  1.0  消息接收时间：  1.0
-2.0000 null  null null  M2 Node22  Node10  初始消息名称：  M2 [Node22] 消息创建时间：  2.0  消息接收时间：  2.0

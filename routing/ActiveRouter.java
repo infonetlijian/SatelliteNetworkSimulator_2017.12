@@ -182,6 +182,7 @@ public abstract class ActiveRouter extends MessageRouter {
 	 * {@link Connection#startTransfer(DTNHost, Message)}
 	 */
 	protected int startTransfer(Message m, Connection con) {
+		
 		int retVal;
 		
 		if (!con.isReadyForTransfer()) {
@@ -494,8 +495,6 @@ public abstract class ActiveRouter extends MessageRouter {
 			return t.getValue(); // started transfer
 		}
 		
-
-		
 		// didn't start transfer to any node -> ask messages from connected
 		for (Connection con : connections) {
 			System.out.println("ActiveRouter.java test for connections:" + con.getLinkType());
@@ -597,6 +596,7 @@ public abstract class ActiveRouter extends MessageRouter {
 		
 		/* in theory we can have multiple sending connections even though
 		  currently all routers allow only one concurrent sending connection */
+
 		for (int i=0; i<this.sendingConnections.size(); ) {
 			boolean removeCurrent = false;
 			Connection con = sendingConnections.get(i);
@@ -608,7 +608,7 @@ public abstract class ActiveRouter extends MessageRouter {
 				/** 仍然具有重传次数，则重传次数减1，否则链路中断并丢弃消息 */
 				int time = (int)this.messages.get(Id).getProperty(RETRANS_TIME);
 				if (time <= 0) {
-					/** drop the message from messages buffer */
+					/** drop the message from messages buffer, false means aborted message */
 					this.deleteMessage(Id, false);
 				} else {		
 					this.messages.get(Id).updateProperty(RETRANS_TIME, time-1);

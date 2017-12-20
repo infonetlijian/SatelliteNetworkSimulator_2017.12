@@ -27,16 +27,20 @@ Group.filebuffersize = 1000k
 # 微波链路建链延时设置，double型，单位为s
 Interface.RadioLinkDelay = 0.1
 Interface.RadioLinkTransmitSpeed = 500k
-Interface.RadioLinkTransmitRange = 3000
+Interface.RadioLinkTransmitRange = 7500
 # 激光链路建链延时设置，double型，单位为s
 Interface.LaserLinkDelay = 100
 Interface.LaserLinkTransmitSpeed = 500M
 Interface.LaserLinkTransmitRange = 10000
+#设置阈值，大于此阈值通过激光链路走，小于此阈值的从微波链路走
+Interface.MessageThreshold = 1M
 # 链路中断概率
 Interface.enableInterrupt = true
-Interface.probabilityOfInterrupt = 0.1
+Interface.probabilityOfInterrupt = 0.05
 # 链路中断重传次数
 Interface.reTransmitTime = 2
+# 是否允许动态分簇
+Interface.DynamicClustering = true
 
 #分簇路由相关参数
 #clusterCheckInterval unit:seconds
@@ -48,11 +52,15 @@ Group.comfirmMessageSize = 1
 # LEO卫星节点参数
 Group.nrofCommunicationNodesInEachPlane = 4
 Group.nrofLEOPlanes = 4
-Group.LEO_OrbitPlaneAngle = 97.8
-userSetting.nrofLEOPlanes = 10
+Group.LEO_OrbitPlaneAngle = 60
+Group.LEO_Eccentricity = 0
+Group.LEO_Radius = 500
+
+### Group or userSetting should be unified
+userSetting.nrofLEOPlanes = 4
 userSetting.nrofLEO = 24
 userSetting.LEOradius = 500
-userSetting.LEOorbitPlaneAngle = 97.8
+userSetting.LEOorbitPlaneAngle = 75
 userSetting.LEOeccentricity = 0
 
 # MEO卫星节点参数
@@ -102,7 +110,7 @@ Interface.transmitSpeed = 250k
 #Interface.transmitRange = 2000
 
 # 用于建立链路测试，提高链路建立概率
-Interface.transmitRange = 7500
+Interface.transmitRange = 8000
 
 
 ## Group-specific settings:
@@ -171,10 +179,11 @@ Group.Constellation = WalkerDelta
 #Group.router = SPNR
 #Group.router = SPNRmodify
 #Group.router = SourceRoutingDijsktraSearchBasedonTemporalGraph
-#Group.router = CGR
+
 #Group.router = DirectDeliveryRouter
-Group.router = ShortestPathFirstRouter
+#Group.router = ShortestPathFirstRouter
 #Group.router = OptimizedClusteringRouter
+Group.router = DynamicMultiLayerSatelliteRouter
 
 #分簇路由
 #Group.router = ClusteringRouter
@@ -186,8 +195,13 @@ Group.router = ShortestPathFirstRouter
 Group.layer = 1
 #Group.Pre_or_onlineOrbitCalculation = preOrbitCalculation
 Group.Pre_or_onlineOrbitCalculation = onlineOrbitCalculation
-#Group.router = EASRRouter
-#Group.router = ClusterRouterBasedonGridRouter
+#Group.router = SPNRmodify
+#Group.router = CGR
+Group.router.CGR.linkDuration = 3
+Group.router.CGR.type = NoPreContactPlanDesign
+#LinkDuration乘以updateInterval为真实链路持续时间
+Group.router.CGRLinkDurationTimesOfUpdateInterval = 10
+
 #Group.router = DijsktraRouter
 Group.msgPathLabel = true
 

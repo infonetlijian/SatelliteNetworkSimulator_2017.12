@@ -237,11 +237,9 @@ public class DTNHost implements Comparable<DTNHost> {
 	 */
 	public List<Connection> getConnections() {
 		List<Connection> lc = new ArrayList<Connection>();
-
 		for (NetworkInterface i : net) {
 			lc.addAll(i.getConnections());
 		}
-
 		return lc;
 	}
 
@@ -404,8 +402,9 @@ public class DTNHost implements Comparable<DTNHost> {
 				i.update();
 			}
 		}
-			this.router.update();
+		this.router.update();
 	}
+	
 	/**
 	 * 
 	 */

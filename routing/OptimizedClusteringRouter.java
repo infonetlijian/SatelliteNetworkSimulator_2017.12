@@ -100,7 +100,8 @@ public class OptimizedClusteringRouter extends ActiveRouter {
     /** store LEO cluster information */
     private LEOclusterInfo LEOci;
     /** store MEO cluster information */
-    private MEOclusterInfo MEOci;    
+    private MEOclusterInfo MEOci;
+
 
     public OptimizedClusteringRouter(Settings s) {
         super(s);
@@ -268,12 +269,6 @@ public class OptimizedClusteringRouter extends ActiveRouter {
         }
         case "MEO":{
             MEOci = new MEOclusterInfo(host);
-            // set MEO list
-            for (DTNHost h : ((SatelliteMovement)getMovementModel()).getHosts()){
-                if (h.getSatelliteType().contains("MEO")){
-                    MEOci.addMEONode(h);
-                }
-            }
             break;
         }
     }
@@ -478,7 +473,7 @@ public class OptimizedClusteringRouter extends ActiveRouter {
         }
 
         if (this.routerTable.containsKey(msg.getTo())) {
-//            System.out.println("find the path!  " +this.routerTable.get(msg.getTo())+"   "+ getSatelliteType() +" to "+ msg.getTo().getSatelliteType()+"  " + msg);
+            System.out.println("find the path!  " +this.routerTable.get(msg.getTo())+"   "+ getSatelliteType() +" to "+ msg.getTo().getSatelliteType()+"  " + msg);
             return true;
         } else {
             return false;
@@ -547,10 +542,10 @@ public class OptimizedClusteringRouter extends ActiveRouter {
         return topologyInfo;
     }
     /**
-     * 改造的最短路径算法，用于特殊场景，需要制定出发源节点，并给定网络拓扑
+     * 改造的最短路径算法，用于特殊场景，需要指定出发源节点，并给定网络拓扑
      * @param msg
      */
-    public void LEOtoMEOshortestPathSearch(Message msg, DTNHost source, HashMap<DTNHost, List<DTNHost>> topologyInfo) {
+    public void shortestPathSearch(Message msg, DTNHost source, HashMap<DTNHost, List<DTNHost>> topologyInfo) {
         if (topologyInfo.isEmpty())
             return;
 
@@ -999,9 +994,9 @@ public class OptimizedClusteringRouter extends ActiveRouter {
         switch (to.getSatelliteType()){
             case "LEO":{
                 //目的节点是否在自身所属轨道平面上
-//            	System.out.println(this.getHost()+" 同一轨道平面内节点 : "+LEOci.getAllHostsInSamePlane());
+            	System.out.println(this.getHost()+" 同一轨道平面内节点 : "+LEOci.getAllHostsInSamePlane());
                 if (LEOci.getAllHostsInSamePlane().contains(to)){
-//                	System.out.println("同一轨道平面!");
+                	System.out.println("同一轨道平面!");
                     chooseOneNeighborHostToSendInSamePlane(msg, to);
                 }
                 else{
@@ -1064,7 +1059,7 @@ public class OptimizedClusteringRouter extends ActiveRouter {
     		if (this.CommunicationNodesList.get(h) + 1 == destinationSerialNumberOfPlane)
     			allCommunicationNodes.add(h);
     	}
-//    	System.out.println("在邻居轨道! 邻居轨道上可通信节点： "+allCommunicationNodes+" connections: "+this.getConnections());
+    	System.out.println("在邻居轨道! 邻居轨道上可通信节点： "+allCommunicationNodes+" connections: "+this.getConnections());
     	for (DTNHost h : allCommunicationNodes){
     		Connection con = this.findConnection(h.getAddress());
     		if (con != null){
@@ -1086,44 +1081,23 @@ public class OptimizedClusteringRouter extends ActiveRouter {
     	if (LEOci.getManageHosts().isEmpty())
     		return;
     	if (((OptimizedClusteringRouter)to.getRouter()).LEOci.getManageHosts().isEmpty()){
-//    		System.out.println(" manage hosts empty!"+to);
+    		System.out.println(" manage hosts empty!"+to);
     		return;
     	}
-//    	System.out.println("尝试，搜索通过MEO转发的最短路径 to" + to);
+    	
     	/**采用最短路径搜索算法的变种来找最优路径**/
-        HashMap<DTNHost, List<DTNHost>> topologyInfo = optimizedTopologyCalculation(LEOci.getManageHosts());//localTopologyCalculation(LEOci.getManageHosts());
-        //添加LEO到MEO的路径
-        //TODO
-        List<DTNHost> connectedManageHosts = new ArrayList<DTNHost>();
-        for(DTNHost h :LEOci.getManageHosts()){
-        	if (this.findConnection(h.getAddress()) != null){
-        		connectedManageHosts.add(h);
-        	}
-        }    
-        //本节点可以直接发送到管理节点
-        topologyInfo.put(this.getHost(), LEOci.getManageHosts());
-        //TODO
-        
-        //添加MEO到目的LEO的路径
-        for (DTNHost MEO : ((OptimizedClusteringRouter)to.getRouter()).LEOci.getManageHosts()){
-        	List<DTNHost> list = topologyInfo.get(MEO);
-            if (list == null) {
-            	list = new ArrayList<DTNHost>();
-                list.add(to);
-            } else {
-            	list.add(to);
-            }     	
-        }
-        //调用搜索算法
-        LEOtoMEOshortestPathSearch(msg, this.getHost(), topologyInfo);
+        //获取LEO通过MEO网络到达目的LEO的拓扑
+        //getLEOtoLEOThroughMEOTopology(this.getHost(), to);
+        //改造的最短路径算法，用于特殊场景，需要指定出发源节点，并给定网络拓扑
+        shortestPathSearch(msg, this.getHost(), getLEOtoLEOThroughMEOTopology(this.getHost(), to));
     	/**采用最短路径搜索算法的变种来找最优路径**/
     	
     	if (this.routerTable.containsKey(to)){
-//    		System.out.println("搜索到通过MEO转发的最短路径！ to" + to);
+    		System.out.println("搜索到通过MEO转发的最短路径！ to" + to);
     		return;
     	}
     	
-//    	System.out.println("转交给MEO节点进行转发   to" + to);
+    	System.out.println("转交给MEO节点进行转发   to" + to);
         int nrofManageHosts = LEOci.getManageHosts().size();
         DTNHost nextHop = LEOci.getManageHosts().get(random.nextInt(nrofManageHosts));//随机选取一个MEO管理节点帮助转发
 
@@ -1144,7 +1118,7 @@ public class OptimizedClusteringRouter extends ActiveRouter {
         switch (to.getSatelliteType()){
             case "LEO":{
                 //是否处于本节点管理簇当中
-//            	System.out.println(this.getHost()+" cluster list: "+MEOci.clusterList);
+            	System.out.println(this.getHost()+" cluster list: "+MEOci.clusterList);
                 if (MEOci.clusterList.contains(to)){
                     //是的话，看是否直接相连，否则就等待
                 	Connection con = this.findConnection(to.getAddress());
@@ -1157,29 +1131,18 @@ public class OptimizedClusteringRouter extends ActiveRouter {
                 	}
                 }
                 //否则找到管理此节点的MEO节点，交于它进行转发
-            	/**采用最短路径搜索算法的变种来找最优路径**/
-                HashMap<DTNHost, List<DTNHost>> topologyInfo = optimizedTopologyCalculation(MEOci.MEOList);//localTopologyCalculation(MEOci.MEOList);          
+            	/**采用最短路径搜索算法的变种来找最优路径**/          
+                HashMap<DTNHost, List<DTNHost>> topologyInfo = getMEOtoLEOTopology(this.getHost(), to);//optimizedTopologyCalculation(MEOci.MEOList);//localTopologyCalculation(MEOci.MEOList);          
                 List<DTNHost> manageHosts = ((OptimizedClusteringRouter)to.getRouter()).LEOci.getManageHosts();              
                 //目的节点没有管理节点可达,则直接跳出
                 if (manageHosts.isEmpty()){
-//                	System.out.println(to+" has no manage hosts! ");
+                	System.out.println(to+" has no manage hosts! ");
                 	return;
-                }
-                //添加MEO到目的LEO的路径
-                for (DTNHost MEO : manageHosts){
-                	List<DTNHost> list = topologyInfo.get(MEO);
-                    if (list == null) {
-                    	list = new ArrayList<DTNHost>();
-                        list.add(to);
-                    } else {
-                    	list.add(to);
-                    }  
-                    topologyInfo.put(MEO, list);
                 }
                 //调用搜索算法
             	MEOtoLEOshortestPathSearch(msg, topologyInfo);
             	if (this.routerTable.containsKey(to))
-//            		System.out.println("MEO找到了最短路径");
+            		System.out.println("MEO找到了最短路径");
             	/**采用最短路径搜索算法的变种来找最优路径**/
 //                //TODO 不是找的最近的MEO，可以改进
 //                else{
@@ -1195,22 +1158,96 @@ public class OptimizedClusteringRouter extends ActiveRouter {
                 break;
             }
             case "MEO":{
-                //check the neighbors first
-                for (Connection con : this.getConnections()){
-                    DTNHost neighborNode = con.getOtherNode(this.getHost());
-                    if (to == neighborNode){
-                        List<Tuple<Integer, Boolean>> path =
-                                new ArrayList<Tuple<Integer, Boolean>>();
-                        path.add(new Tuple<Integer, Boolean>(neighborNode.getAddress(), false));
-                        routerTable.put(to, path);
-                    }
-                }
-                //if not, then check all other MEO nodes
-                shortestPathSearch(msg, MEOci.getMEOList());
+//                //check the neighbors first
+//                for (Connection con : this.getConnections()){
+//                    DTNHost neighborNode = con.getOtherNode(this.getHost());
+//                    if (to == neighborNode){
+//                        List<Tuple<Integer, Boolean>> path =
+//                                new ArrayList<Tuple<Integer, Boolean>>();
+//                        path.add(new Tuple<Integer, Boolean>(neighborNode.getAddress(), false));
+//                        routerTable.put(to, path);
+//                    }
+//                }
+//                //if not, then check all other MEO nodes
+                //改造的最短路径算法，用于特殊场景，需要指定出发源节点，并给定网络拓扑
+                shortestPathSearch(msg, this.getHost(), getMEOtoMEOTopology(this.getHost()));
+                //shortestPathSearch(msg, MEOci.getMEOList());
                 break;
             }
         }
     }
+    /**
+     * 每一个MEO节点的邻居返回4个节点，同一轨道内的相邻两个节点，邻居轨道的两个最近节点，
+     * 从而计算出整体的拓扑
+     * @param startMEO 起始点
+     * @param endMEO   目的节点
+     * @return
+     */
+    public HashMap<DTNHost, List<DTNHost>> getLEOtoLEOThroughMEOTopology(DTNHost startLEO, DTNHost endLEO){
+    	HashMap<DTNHost, List<DTNHost>> topologyInfo = new HashMap<DTNHost, List<DTNHost>>();
+    	
+    	List<DTNHost> manageHosts = ((OptimizedClusteringRouter)endLEO.getRouter()).LEOci.updateManageHosts();
+    	
+    	topologyInfo = getMEOtoLEOTopology(manageHosts.get(0), endLEO);
+    	
+    	for (DTNHost MEO : manageHosts){
+    		List<DTNHost> list = topologyInfo.get(MEO);  	
+            if (list == null) {
+            	list = new ArrayList<DTNHost>();
+                list.add(startLEO);
+            } else {
+            	list.add(startLEO);
+            }
+    	}
+    	return topologyInfo;
+    }
+
+    /**
+     * 每一个MEO节点的邻居返回4个节点，同一轨道内的相邻两个节点，邻居轨道的两个最近节点，
+     * 从而计算出整体的拓扑
+     * @param startMEO 起始点
+     * @param endMEO   目的节点
+     * @return
+     */
+    public HashMap<DTNHost, List<DTNHost>> getMEOtoMEOTopology(DTNHost sMEO){
+    	HashMap<DTNHost, List<DTNHost>> topologyInfo = new HashMap<DTNHost, List<DTNHost>>();
+    	for (DTNHost MEO : ((OptimizedClusteringRouter)sMEO.getRouter()).MEOci.getMEOList()){
+    		List<DTNHost> neighborNodes = new ArrayList<DTNHost>();
+    		//同一轨道内的相邻两个节点
+    		neighborNodes.addAll(((OptimizedClusteringRouter)
+    				MEO.getRouter()).MEOci.allowConnectMEOHostsInSamePlane);
+    		//邻居轨道的两个最近节点
+    		neighborNodes.addAll(((OptimizedClusteringRouter)
+    				MEO.getRouter()).MEOci.updateAllowConnectMEOHostsInNeighborPlane());  
+    		topologyInfo.put(MEO, neighborNodes);
+    	}
+    	return topologyInfo;
+    }
+    /**
+     * 每一个MEO节点的邻居返回4个节点，同一轨道内的相邻两个节点，邻居轨道的两个最近节点，
+     * 从而计算出整体的拓扑
+     * @param startMEO 起始MEO点
+     * @param endMEO   目的LEO节点
+     * @return
+     */
+    public HashMap<DTNHost, List<DTNHost>> getMEOtoLEOTopology(DTNHost sMEO, DTNHost endLEO){
+    	HashMap<DTNHost, List<DTNHost>> topologyInfo = new HashMap<DTNHost, List<DTNHost>>();
+    	
+    	topologyInfo = getMEOtoMEOTopology(sMEO);
+    	
+    	//拓扑中添加MEO到目的LEO的链路
+    	for (DTNHost MEO : ((OptimizedClusteringRouter)endLEO.getRouter()).LEOci.updateManageHosts()){
+    		List<DTNHost> list = topologyInfo.get(MEO);  	
+            if (list == null) {
+            	list = new ArrayList<DTNHost>();
+                list.add(endLEO);
+            } else {
+            	list.add(endLEO);
+            }
+    	}	
+    	return topologyInfo;
+    }
+    
     /**
      * Bubble sort algorithm
      *
@@ -1230,7 +1267,7 @@ public class OptimizedClusteringRouter extends ActiveRouter {
                     distanceList.add(i + 1, var1);
                 }
             }
-        }
+        }     
         return distanceList;
     }
 
@@ -1437,8 +1474,14 @@ public class OptimizedClusteringRouter extends ActiveRouter {
         public int startNumber;//此轨道平面内的节点，起始编号
         /** end address number of the first host in the plane*/
         public int endNumber;//此轨道平面内的节点，结尾编号
-        /** all hosts in the neighbor orbit plane, and they can be forwarded directly without MEO*/
+        /** all hosts in LEO plane*/
+        private List<DTNHost> LEOList = new ArrayList<DTNHost>();
+        /** all hosts in the same orbit plane*/
         public List<DTNHost> allHostsInSamePlane = new ArrayList<DTNHost>();
+        /** neighbor hosts in the same orbit plane, and they can be forwarded directly*/
+        private List<DTNHost> allowConnectMEOHostsInSamePlane = new ArrayList<DTNHost>();
+        /** neighbor hosts in two neighbor orbit plane, and they can be forwarded directly*/
+        private List<DTNHost> allowConnectMEOHostsInNeighborPlane = new ArrayList<DTNHost>();
         /** neighbor hosts in the neighbor orbit plane*/
         public List<DTNHost> neighborPlaneHosts = new ArrayList<DTNHost>();//相邻轨道平面内的两个邻居节点
         /** hosts list in the same orbit plane, and they can be forwarded directly without MEO */
@@ -1449,8 +1492,124 @@ public class OptimizedClusteringRouter extends ActiveRouter {
         public LEOclusterInfo(DTNHost h){
         	thisNode = h;
             initInterSatelliteNeighbors();//初始化记录节点在同一个轨道内的所有节点，以及轨道内相邻的邻居用于直接转发
+            //找到所有LEO节点
+            findAllLEONodes();
+            //找到所有邻居轨道平面的节点
+            findAllSatellitesInLEONeighborPlane();
+            //同平面内的邻居节点
+            findAllowConnectMEOHostsInLEOSamePlane(thisNode.getAddress()/LEO_NROF_S_EACHPLANE + 1, LEO_NROF_S_EACHPLANE);
         }
+        /**
+         * 初始化设定本节点的同轨的邻居节点
+         * @param nrofPlane
+         * @param nrofSatelliteInOnePlane
+         */
+        public void findAllowConnectMEOHostsInLEOSamePlane(int nrofPlane, int nrofSatelliteInOnePlane){ 
+            int	startNumber = LEO_NROF_S_EACHPLANE * (nrofPlane - 1);//此轨道平面内的节点，起始编号
+            int endNumber = LEO_NROF_S_EACHPLANE * nrofPlane - 1;//此轨道平面内的节点，结尾编号
+            if (!(thisNode.getAddress() >= startNumber && thisNode.getAddress()<= endNumber)){
+            	throw new SimError("LEO address calculation error");
+            }
+            int a = thisNode.getAddress() - 1;
+            int b = thisNode.getAddress() + 1;
+            
+            if (a < startNumber)
+            	a = endNumber;
+            if (b > endNumber)
+            	b = startNumber;
+            allowConnectMEOHostsInSamePlane.add(findHostByAddress(a));
+            allowConnectMEOHostsInSamePlane.add(findHostByAddress(b));
+        }
+        /**
+         * 初始化设定本节点的两个邻居轨道平面所有节点于allowConnectMEOHostsInNeighborPlane中
+         * @param nrofPlane
+         * @param nrofSatelliteInOnePlane
+         */
+        public void findAllSatellitesInLEONeighborPlane(){ 
 
+            int thisHostAddress = getHost().getAddress();
+
+            int serialNumberOfPlane = thisHostAddress/LEO_NROF_S_EACHPLANE + 1;
+            int a = serialNumberOfPlane - 1;
+            int b = serialNumberOfPlane + 1;
+            if (a < 1)
+            	a = LEO_TOTAL_PLANE;
+            if(b > LEO_TOTAL_PLANE)
+            	b = 1;
+            //左邻居MEO轨道平面
+            int startNumber1 = LEO_NROF_S_EACHPLANE * (a - 1);//此轨道平面内的节点，起始编号
+            int endNumber1 = LEO_NROF_S_EACHPLANE * a - 1;//此轨道平面内的节点，结尾编号
+            
+            //如果目的节点在邻居轨道平面上，就找出这个目的节点所属轨道平面的所有的节点
+            for (DTNHost host : getHosts()){
+                if (host.getAddress() >= startNumber1 && host.getAddress() <= endNumber1){
+                	allowConnectMEOHostsInNeighborPlane.add(host);
+                }
+            }
+            //右邻居MEO轨道平面
+            int startNumber2 = LEO_NROF_S_EACHPLANE * (b - 1);//此轨道平面内的节点，起始编号
+            int endNumber2 = LEO_NROF_S_EACHPLANE * b - 1;//此轨道平面内的节点，结尾编号
+            
+            //如果目的节点在邻居轨道平面上，就找出这个目的节点所属轨道平面的所有的节点
+            for (DTNHost host : getHosts()){
+                if (host.getAddress() >= startNumber2 && host.getAddress() <= endNumber2){
+                	allowConnectMEOHostsInNeighborPlane.add(host);
+                }
+            }
+        }
+        /**
+         * 同一平面内的邻居两个节点
+         * @return
+         */
+        public List<DTNHost> getAllowConnectMEOHostsInLEOSamePlane(){
+        	return allowConnectMEOHostsInSamePlane;
+        }
+        /**
+         * neighbor hosts in two neighbor orbit plane
+         * @return
+         */
+        public List<DTNHost> getAllowConnectMEOHostsInNeighborPlane(){
+        	return allowConnectMEOHostsInNeighborPlane;
+        }
+        /**
+         * 动态找到MEO的当前邻居轨道的最近两个节点用户邻居通信
+         * @return
+         */
+        public List<DTNHost> updateAllowConnectLEOHostsInNeighborPlane(){
+        	List<DTNHost> list = new ArrayList<DTNHost>();
+        	
+        	List<Tuple<DTNHost, Double>> listFromDistance = new ArrayList<Tuple<DTNHost, Double>>();
+        	for (DTNHost h : getAllowConnectMEOHostsInNeighborPlane()){
+        		listFromDistance.add(new Tuple<DTNHost, Double>(h, getDistance(thisNode, h)));
+        	}
+        	sort(listFromDistance);
+        	for (Tuple<DTNHost, Double> t : listFromDistance){
+        		if (list.isEmpty())
+        			list.add(t.getKey());
+        		else{
+        			//不是同一个轨道平面的
+        			if (!((OptimizedClusteringRouter)list.get(0).getRouter())
+        					.LEOci.getAllowConnectMEOHostsInLEOSamePlane().contains(t.getKey())){
+        					list.add(t.getKey());	
+        					}
+        		}
+        		if (list.size() >= 2)
+        			break;
+        	}
+        	return list;
+        }
+        /**
+         * 找到所有LEO节点
+         * @return
+         */
+        public List<DTNHost> findAllLEONodes(){
+        	LEOList.clear();
+        	for (DTNHost h : getHosts()){
+        		if (h.getSatelliteType().contains("LEO"))
+        			LEOList.add(h);
+        	}
+        	return LEOList;       		
+        }
         /**
          * 判断目的节点是否在邻居平面上
          * @param to
@@ -1464,7 +1623,7 @@ public class OptimizedClusteringRouter extends ActiveRouter {
 
             int serialNumberOfPlane = thisHostAddress/NROF_S_EACHPLANE + 1;
             int destinationSerialNumberOfPlane = to.getAddress()/NROF_S_EACHPLANE + 1;
-//            System.out.println("src: "+serialNumberOfPlane+" des  "+destinationSerialNumberOfPlane);
+            System.out.println("src: "+serialNumberOfPlane+" des  "+destinationSerialNumberOfPlane);
             if (abs(serialNumberOfPlane - destinationSerialNumberOfPlane) <= 1 ||
                     abs(serialNumberOfPlane - destinationSerialNumberOfPlane) >= LEO_TOTAL_PLANE){
                 int startNumber = NROF_S_EACHPLANE * (destinationSerialNumberOfPlane - 1);//此轨道平面内的节点，起始编号
@@ -1473,7 +1632,7 @@ public class OptimizedClusteringRouter extends ActiveRouter {
                 hostsInNeighborOrbitPlane = new ArrayList<DTNHost>();
                 //如果目的节点在邻居轨道平面上，就找出这个目的节点所属轨道平面的所有的节点
                 for (DTNHost host : getHosts()){
-                    if (host.getAddress() >= startNumber || host.getAddress() <= endNumber){
+                    if (host.getAddress() >= startNumber && host.getAddress() <= endNumber){
                         hostsInNeighborOrbitPlane.add(host);
                     }
                 }
@@ -1509,9 +1668,10 @@ public class OptimizedClusteringRouter extends ActiveRouter {
         /**
          * update manage hosts according to connection
          */
-        public void updateManageHosts(){
+        public List<DTNHost> updateManageHosts(){
         	manageHosts.clear();
         	manageHosts.addAll(getConnectedMEOHosts());
+        	return manageHosts;
         }
         /**
          * add a MEO manage host into list
@@ -1571,7 +1731,7 @@ public class OptimizedClusteringRouter extends ActiveRouter {
                 startNumber = LEO_NROF_S_EACHPLANE * (nrofPlane - 1);//此轨道平面内的节点，起始编号
                 endNumber = LEO_NROF_S_EACHPLANE * nrofPlane - 1;//此轨道平面内的节点，结尾编号
             }
-//            System.out.println("init  "+thisNode+"  "+startNumber+"  "+endNumber);
+            System.out.println("init  "+thisNode+"  "+startNumber+"  "+endNumber);
             for (DTNHost host : getHosts()){
                 if (host.getAddress() >= startNumber && host.getAddress()<= endNumber){
                     allHostsInSamePlane.add(host);//同一个轨道内的相邻节点
@@ -1585,6 +1745,7 @@ public class OptimizedClusteringRouter extends ActiveRouter {
 
             int thisHostAddress = getHost().getAddress();
 
+            //同轨道平面内所有节点
             findAllSatellitesInSamePlane(thisHostAddress/LEO_NROF_S_EACHPLANE + 1, LEO_NROF_S_EACHPLANE);
 
             int upperBound = getHosts().size() - 1;
@@ -1606,6 +1767,7 @@ public class OptimizedClusteringRouter extends ActiveRouter {
                     " Hosts in the cluster: ";
         }
     }
+    
     /**
      * Stores the cluster information in the MEO node
      */
@@ -1616,26 +1778,178 @@ public class OptimizedClusteringRouter extends ActiveRouter {
         /** confirmed hosts list in the cluster */
         private List<DTNHost> clusterList;
         /** all MEO hosts list */
-        private List<DTNHost> MEOList;
+        private List<DTNHost> MEOList = new ArrayList<DTNHost>();
         /** record LEO nodes in other cluster through MEO confirm messges */
         private HashMap<DTNHost, List<DTNHost>> otherClusterList;
         /** record latest cluster information update time */
         private HashMap<DTNHost, Double> clusterUpdateTime;
-
+        /** neighbor hosts in the same orbit plane, and they can be forwarded directly*/
+        private List<DTNHost> allowConnectMEOHostsInSamePlane = new ArrayList<DTNHost>();
+        /** neighbor hosts in two neighbor orbit plane, and they can be forwarded directly*/
+        private List<DTNHost> allowConnectMEOHostsInNeighborPlane = new ArrayList<DTNHost>();
+        /** all hosts in the same orbit plane*/
+        public List<DTNHost> allHostsInSamePlane = new ArrayList<DTNHost>();
+        
+        /* plane number of this MEO node*/
+        private int nrofMEOPlane;
+        /* start host number of this MEO plane*/
+        private int startNumberInSameMEOPlane;
+        /* end host number of this MEO plane*/
+        private int endNumberInSameMEOPlane;
+        
         public MEOclusterInfo(DTNHost thisNode){
             this.thisNode = thisNode;
             hostsInTransmissionRange = new ArrayList<DTNHost>();
             clusterList = new ArrayList<DTNHost>();
-            MEOList = new ArrayList<DTNHost>();
+            
+            findAllMEONodes();
             otherClusterList = new HashMap<DTNHost, List<DTNHost>>();
             clusterUpdateTime = new HashMap<DTNHost, Double>();
+            
+            //设置本MEO轨道平面内的开始/结束节点编号，以及MEO平面编号
+            setPlaneNumber();
+            //同轨道平面内邻居的两个节点
+            findAllowConnectMEOHostsInSamePlane();
+            //同轨道平面内所有节点
+            findAllSatellitesInSamePlane();
+            //初始化设定本节点的两个邻居轨道平面所有节点
+            findAllSatellitesInNeighborPlane();
         }
         /**
-         * In confirm process (MEO to LEO), record each LEO host in transmission range
-         * @param h
+         * 计算本MEO节点所属的轨道参数
          */
-        public void addHostsInTransmissionRange(DTNHost h){
-            hostsInTransmissionRange.add(h);
+        public void setPlaneNumber(){
+        	this.nrofMEOPlane = (thisNode.getAddress() - LEO_TOTAL_SATELLITES)/MEO_NROF_S_EACHPLANE + 1;
+        	this.startNumberInSameMEOPlane = LEO_TOTAL_SATELLITES + MEO_NROF_S_EACHPLANE * (nrofMEOPlane - 1);//此轨道平面内的节点，起始编号
+            this.endNumberInSameMEOPlane = LEO_TOTAL_SATELLITES + MEO_NROF_S_EACHPLANE * nrofMEOPlane - 1;//此轨道平面内的节点，结尾编号
+            //System.out.println(thisNode.getAddress()+"  "+LEO_TOTAL_SATELLITES+"  "+MEO_NROF_S_EACHPLANE+"  "+nrofMEOPlane+"  "+startNumberInSameMEOPlane+"  "+endNumberInSameMEOPlane);
+        }
+        /**
+         * 初始化找到所有MEO属性节点
+         */
+        public List<DTNHost> findAllMEONodes(){
+        	MEOList.clear();
+        	for (DTNHost h : getHosts()){
+        		if (h.getSatelliteType().contains("MEO"))
+        			MEOList.add(h);
+        	} 
+        	return MEOList;
+        }
+        /**
+         * 初始化设定本节点的同轨的邻居节点
+         * @param nrofPlane
+         * @param nrofSatelliteInOnePlane
+         */
+        public void findAllowConnectMEOHostsInSamePlane(){ 
+            int	startNumber = this.startNumberInSameMEOPlane;//此轨道平面内的节点，起始编号
+            int endNumber = this.endNumberInSameMEOPlane;//此轨道平面内的节点，结尾编号
+            if (!(thisNode.getAddress() >= startNumber && thisNode.getAddress()<= endNumber)){
+            	System.out.println(thisNode+" nrofPlane "+nrofMEOPlane+"  "+this.startNumberInSameMEOPlane+"  "+this.endNumberInSameMEOPlane);
+            	throw new SimError("MEO address calculation error");
+            }
+            int a = thisNode.getAddress() - 1;
+            int b = thisNode.getAddress() + 1;
+            
+            if (a < startNumber)
+            	a = endNumber;
+            if (b > endNumber)
+            	b = startNumber;
+            allowConnectMEOHostsInSamePlane.add(findHostByAddress(a));
+            allowConnectMEOHostsInSamePlane.add(findHostByAddress(b));
+        }
+        /**
+         * 初始化设定本节点的同轨所有节点
+         * @param nrofPlane
+         * @param nrofSatelliteInOnePlane
+         */
+        public void findAllSatellitesInSamePlane(){ 
+        	int startNumber = this.startNumberInSameMEOPlane;//此轨道平面内的节点，起始编号
+            int endNumber = this.endNumberInSameMEOPlane;//此轨道平面内的节点，结尾编号
+
+            for (DTNHost host : getHosts()){
+                if (host.getAddress() >= startNumber && host.getAddress()<= endNumber){
+                    allHostsInSamePlane.add(host);//同一个轨道内的相邻节点
+                }
+            }
+            //System.out.println(thisNode+"  allowConnectMEOHostsInSamePlane  "+allowConnectMEOHostsInSamePlane);
+        }
+        /**
+         * 初始化设定本节点的两个邻居轨道平面所有节点于allowConnectMEOHostsInNeighborPlane中
+         * @param nrofPlane
+         * @param nrofSatelliteInOnePlane
+         */
+        public void findAllSatellitesInNeighborPlane(){ 
+            int serialNumberOfPlane = this.nrofMEOPlane;
+            int a = serialNumberOfPlane - 1;
+            int b = serialNumberOfPlane + 1;
+            
+            if (a < 1)
+            	a = MEO_TOTAL_PLANE;
+            if(b > MEO_TOTAL_PLANE)
+            	b = 1;
+            //左邻居MEO轨道平面
+            int startNumber1 = LEO_TOTAL_SATELLITES + MEO_NROF_S_EACHPLANE * (a - 1);//此轨道平面内的节点，起始编号
+            int endNumber1 = LEO_TOTAL_SATELLITES + MEO_NROF_S_EACHPLANE * a - 1;//此轨道平面内的节点，结尾编号
+            
+            //如果目的节点在邻居轨道平面上，就找出这个目的节点所属轨道平面的所有的节点
+            for (DTNHost host : getHosts()){
+                if (host.getAddress() >= startNumber1 && host.getAddress() <= endNumber1){
+                	allowConnectMEOHostsInNeighborPlane.add(host);
+                }
+            }
+            //右邻居MEO轨道平面
+            int startNumber2 = LEO_TOTAL_SATELLITES + MEO_NROF_S_EACHPLANE * (b - 1);//此轨道平面内的节点，起始编号
+            int endNumber2 = LEO_TOTAL_SATELLITES + MEO_NROF_S_EACHPLANE * b - 1;//此轨道平面内的节点，结尾编号
+            
+            //如果目的节点在邻居轨道平面上，就找出这个目的节点所属轨道平面的所有的节点
+            for (DTNHost host : getHosts()){
+                if (host.getAddress() >= startNumber2 && host.getAddress() <= endNumber2){
+                	allowConnectMEOHostsInNeighborPlane.add(host);
+                }
+            }
+            //System.out.println(thisNode+"  allowConnectMEOHostsInNeighborPlane  "+allowConnectMEOHostsInNeighborPlane);
+        }
+
+        /**
+         * 动态找到MEO的当前邻居轨道的最近两个节点用户邻居通信
+         * @return
+         */
+        public List<DTNHost> updateAllowConnectMEOHostsInNeighborPlane(){
+        	List<DTNHost> list = new ArrayList<DTNHost>();
+        	
+        	List<Tuple<DTNHost, Double>> listFromDistance = new ArrayList<Tuple<DTNHost, Double>>();
+        	for (DTNHost h : getAllowConnectMEOHostsInNeighborPlane()){
+        		listFromDistance.add(new Tuple<DTNHost, Double>(h, getDistance(thisNode, h)));
+        	}
+        	sort(listFromDistance);
+        	for (Tuple<DTNHost, Double> t : listFromDistance){
+        		if (list.isEmpty())
+        			list.add(t.getKey());
+        		else{
+        			//不是同一个轨道平面的
+        			if (!((OptimizedClusteringRouter)list.get(0).getRouter())
+        					.MEOci.getAllowConnectMEOHostsInSamePlane().contains(t.getKey())){
+        					list.add(t.getKey());	
+        					}
+        		}
+        		if (list.size() >= 2)
+        			break;
+        	}
+        	return list;
+        }
+        /**
+         * 同一轨道内的所有节点
+         * @return
+         */
+        public List<DTNHost> getAllowConnectMEOHostsInSamePlane(){
+        	return allowConnectMEOHostsInSamePlane;
+        }
+        /**
+         * 邻居轨道内的所有节点
+         * @return
+         */
+        public List<DTNHost> getAllowConnectMEOHostsInNeighborPlane(){
+        	return allowConnectMEOHostsInNeighborPlane;
         }
         /**
          * update hosts list that in transmission range of this MEO
@@ -1695,13 +2009,6 @@ public class OptimizedClusteringRouter extends ActiveRouter {
          */
         public List<DTNHost> getClusterList(){
             return clusterList;
-        }
-        /**
-         * add other accessible MEO node in the network
-         * @param h
-         */
-        public void addMEONode(DTNHost h){
-            MEOList.add(h);
         }
         /**
          * delete other unaccessible MEO node

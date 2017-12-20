@@ -70,11 +70,6 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	private int activenessJitterMax;
 	/** this interface's activeness jitter value */
 	private int activenessJitterValue;
-
-	/** record all allow to connect nodes in LEO plane*/
-	public List<DTNHost> allowToConnectNodesInLEOPlane = new ArrayList<DTNHost>();
-	/** record all allow to connect nodes in MEO plane*/
-	public List<DTNHost> allowToConnectNodesInMEOPlane = new ArrayList<DTNHost>();
 	
 	/**新增参数*/
 	protected HashMap<DTNHost,HashMap<DTNHost, double[]>> neighborsList = new HashMap<DTNHost,HashMap<DTNHost, double[]>>();//新增
@@ -373,7 +368,6 @@ abstract public class NetworkInterface implements ModuleCommunicationListener {
 	protected boolean isWithinRange(NetworkInterface anotherInterface) {
 		double smallerRange = anotherInterface.getTransmitRange();
 		double myRange = getTransmitRange();
-		System.out.println("链路类型："+this.getInterfaceType()+"  "+"本地接口传输范围："+myRange+"  "+"另一端接口传输范围："+smallerRange);
 		if (myRange < smallerRange) {
 			smallerRange = myRange;
 		}

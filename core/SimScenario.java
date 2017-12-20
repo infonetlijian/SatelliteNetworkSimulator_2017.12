@@ -377,7 +377,7 @@ public class SimScenario implements Serializable {
 	public void setEndTime(double EndTime){
 		this.endTime = EndTime;
 	}
-    /**
+   /**
      * Creates hosts for the scenario
      */
     protected void createHosts() {
@@ -471,8 +471,15 @@ public class SimScenario implements Serializable {
             }
             setOrbitInfo(s);
             setCommunicationNodesProperty(s, hosts);
-            setallowToConnectNodesInLEOPlane(hosts);//
+            
+            /* initialization of satellite link info */
+            for (DTNHost h : hosts) {
+            	if (h.getMovementModel() instanceof SatelliteMovement)
+            		((SatelliteMovement)h.getMovementModel()).initSatelliteInfo();
+            }
+            
         }
+        
         // Set the multiThread label according to user's setting
         DTNHost.setMultiThread();
         // decide whether to use cache function
@@ -510,37 +517,37 @@ public class SimScenario implements Serializable {
 	 * 初始化计算每个轨道平面内的所有节点，并放入NetworkInterace中存储下来，便于在建立链路时判断，直接拒绝不允许的Connection建立，减少仿真器开销
 	 * @param hosts
 	 */
-	public void setallowToConnectNodesInLEOPlane(List<DTNHost> hosts){
-		//轨道平面信息
-		int nrofLEO = ((SatelliteMovement)hosts.get(0).getMovementModel()).getTotalNrofLEOSatellites();   
-		int nrofPlanes = ((SatelliteMovement)hosts.get(0).getMovementModel()).getTotalNrofLEOPlanes();
-    	int nrofLEOInOnePlane = nrofLEO/nrofPlanes;
-    	
-    	HashMap<Integer, List<DTNHost>> map = new HashMap<Integer, List<DTNHost>>();
-    	/**计算每一个节点的轨道内节点**/
-		for (DTNHost h : hosts){
-			int seriesNumberOfLEOPlane = h.getAddress()/nrofLEOInOnePlane + 1;
-			//判断这个轨道平面是否计算过了
-			if (!map.containsKey(seriesNumberOfLEOPlane)){
-			    int startNumber = nrofLEOInOnePlane * (seriesNumberOfLEOPlane - 1);//此轨道平面内的节点，起始编号
-			    int endNumber = nrofLEOInOnePlane * seriesNumberOfLEOPlane - 1;//此轨道平面内的节点，结尾编号
-			        List<DTNHost> allHostsInSamePlane = new ArrayList<DTNHost>();
-			        for (DTNHost host : getHosts()){
-			            if (host.getAddress() >= startNumber && host.getAddress()<= endNumber){
-			                allHostsInSamePlane.add(host);//同一个轨道内的相邻节点
-			            }
-			        }
-			        map.put(seriesNumberOfLEOPlane, allHostsInSamePlane);
-			}
-			//写入接口类中存储下来
-			for (NetworkInterface i : h.getInterfaces()){
-				//在LEO平面上，两类允许连接的节点列表
-				i.allowToConnectNodesInLEOPlane = new ArrayList<DTNHost>();
-				i.allowToConnectNodesInLEOPlane.addAll(map.get(seriesNumberOfLEOPlane));
-				i.allowToConnectNodesInLEOPlane.addAll(i.getHost().getRouter().CommunicationNodesList.keySet());
-			}	
-		}
-	}
+//	public void setallowToConnectNodesInLEOPlane(List<DTNHost> hosts){
+//		//轨道平面信息
+//		int nrofLEO = ((SatelliteMovement)hosts.get(0).getMovementModel()).getTotalNrofLEOSatellites();   
+//		int nrofPlanes = ((SatelliteMovement)hosts.get(0).getMovementModel()).getTotalNrofLEOPlanes();
+//    	int nrofLEOInOnePlane = nrofLEO/nrofPlanes;
+//    	
+//    	HashMap<Integer, List<DTNHost>> map = new HashMap<Integer, List<DTNHost>>();
+//    	/**计算每一个节点的轨道内节点**/
+//		for (DTNHost h : hosts){
+//			int seriesNumberOfLEOPlane = h.getAddress()/nrofLEOInOnePlane + 1;
+//			//判断这个轨道平面是否计算过了
+//			if (!map.containsKey(seriesNumberOfLEOPlane)){
+//			    int startNumber = nrofLEOInOnePlane * (seriesNumberOfLEOPlane - 1);//此轨道平面内的节点，起始编号
+//			    int endNumber = nrofLEOInOnePlane * seriesNumberOfLEOPlane - 1;//此轨道平面内的节点，结尾编号
+//			        List<DTNHost> allHostsInSamePlane = new ArrayList<DTNHost>();
+//			        for (DTNHost host : getHosts()){
+//			            if (host.getAddress() >= startNumber && host.getAddress()<= endNumber){
+//			                allHostsInSamePlane.add(host);//同一个轨道内的相邻节点
+//			            }
+//			        }
+//			        map.put(seriesNumberOfLEOPlane, allHostsInSamePlane);
+//			}
+//			//写入接口类中存储下来
+//			for (NetworkInterface i : h.getInterfaces()){
+//				//在LEO平面上，两类允许连接的节点列表
+//				i.allowToConnectNodesInLEOPlane = new ArrayList<DTNHost>();
+//				i.allowToConnectNodesInLEOPlane.addAll(map.get(seriesNumberOfLEOPlane));
+//				i.allowToConnectNodesInLEOPlane.addAll(i.getHost().getRouter().CommunicationNodesList.keySet());
+//			}	
+//		}
+//	}
     /**
      * Makes sure that a value is positive
      *
@@ -728,6 +735,8 @@ public class SimScenario implements Serializable {
 		    			return initialLEOWalkerDeltaParameters(s, m, NROF_SATELLITES, NROF_PLANE);
 		    		}
 	    		}
+
+	    			
 	    	}
 	    	case "MEO":{
 	    		switch(constellationType){
@@ -782,6 +791,7 @@ public class SimScenario implements Serializable {
             radius = 6371 + 780;							//单位是km
         else
             radius = 6371 + s.getDouble("LEO_Radius");
+        
         //int NROF_SATELLITES = s.getInt(NROF_HOSTS_S);//总节点数
         //int NROF_PLANE = 3;//轨道平面数
         int NROF_S_EACHPLANE = NROF_SATELLITES / NROF_PLANE;//每个轨道平面上的节点数

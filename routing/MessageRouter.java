@@ -104,9 +104,7 @@ public abstract class MessageRouter {
 	/** Queue mode for sending messages */
 	protected int sendQueueMode;
 	/** applications attached to the host */
-	private HashMap<String, Collection<Application>> applications = null;
-	
-	
+	private HashMap<String, Collection<Application>> applications = null;	
 	/** The messages this router is carrying */
 	protected HashMap<String, Message> messages; 
 	
@@ -332,18 +330,17 @@ public abstract class MessageRouter {
 			throw new SimError("No message with ID " + id + " in the incoming "+
 					"buffer of " + this.host);
 		}
-
+		//用于测试的代码
 //		System.out.println("IB成功接收文件："+"  "+this.getHost()+"   "+incoming.getProperty(SelectLabel)+ "  "
 //				+incoming.getFilename()+" "+incoming.getChunkID()+"  "
 //					+incoming.getId()+" "+incoming.getFrom()+"  "+incoming.getTo()+"  "+"初始消息名称："+"  "+incoming.getInitMsgId()
 //					+" "+ incoming.getHops()
 //					+" "+"消息创建时间："+"  "+ incoming.getCreationTime()+"  "+"消息接收时间："+"  "+ incoming.getReceiveTime());
 		
-//		System.out.println("当前节点："+"  "+this.getHost()+"   "+"消息剩余重传次数："+incoming.getProperty(RETRANS_TIME)+ "  "
-//			+"消息ID："+"  "+incoming.getId()+" "+"源节点："+incoming.getFrom()+"  "+"目的节点："+incoming.getTo());
+		System.out.println("当前节点："+"  "+this.getHost()+"   "+"消息剩余重传次数："+incoming.getProperty(RETRANS_TIME)+ "  "
+			+"消息ID："+"  "+incoming.getId()+" "+"源节点："+incoming.getFrom()+"  "+"目的节点："+incoming.getTo());
 		
 		incoming.setReceiveTime(SimClock.getTime());					//设置消息接收时间		
-
 				
 		// Pass the message to the application (if any) and get outgoing message
 		Message outgoing = incoming;
@@ -360,7 +357,7 @@ public abstract class MessageRouter {
 		isFinalRecipient = aMessage.getTo() == this.host;
 		isFirstDelivery = isFinalRecipient && !isDeliveredMessage(aMessage);  	// 判断是否为目的节点且为第一次到达
 		
-		/*** 将消息根据实际情况放入相应的缓冲区 ***/
+		/** put the message into the corresponding buffer*/
 		if (!isFinalRecipient && outgoing!=null) {			// 不是目的节点，应用层也不想丢掉这个消息
 			// when dtnHost receive the message, the retransmission time should be updated
 		    Settings s = new Settings("Interface");

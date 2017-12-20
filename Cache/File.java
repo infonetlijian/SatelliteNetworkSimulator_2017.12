@@ -1,13 +1,12 @@
+/*
+ * copyright 2017 ustc, Infonet
+ */
 package Cache;
 
 import java.util.ArrayList;
 import java.util.Random;
-
 import core.SimClock;
 
-/**
- * Created by ustc on 2016/6/24.
- */
 public class File {
     private String id;
     private int size;

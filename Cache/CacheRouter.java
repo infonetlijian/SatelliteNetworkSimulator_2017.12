@@ -1,3 +1,6 @@
+/*
+ * copyright 2017 ustc, Infonet
+ */
 package Cache;
 
 import java.util.ArrayList;
@@ -87,7 +90,6 @@ public class CacheRouter extends MessageRouter {
 		if (s.contains(F_SIZE_S)) {
 			this.filebuffersize = s.getInt(F_SIZE_S);
 		}
-		
 	}
 	
 	@Override

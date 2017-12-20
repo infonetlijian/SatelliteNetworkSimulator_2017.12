@@ -15,6 +15,7 @@ import core.NetworkInterface;
 import core.Settings;
 import core.DTNHost;
 import core.SimError;
+import movement.SatelliteMovement;
 
 /**
  * A simple Network Interface that provides a constant bit-rate service, where
@@ -37,6 +38,8 @@ public class SimpleSatelliteInterface extends NetworkInterface {
 	private int radioTransmitSpeed;
 	/**　radio interface tansmitRange in km */
 	private double radioTransmitRange;
+	/** dynamic clustering by MEO or static clustering by MEO */
+	private static boolean dynamicClustering;
 	
 	
 	/**
@@ -46,6 +49,7 @@ public class SimpleSatelliteInterface extends NetworkInterface {
 		super(s);
 		this.radioTransmitSpeed = s.getInt("RadioLinkTransmitSpeed");
 		this.radioTransmitRange = s.getInt("RadioLinkTransmitRange");
+		dynamicClustering = s.getBoolean("DynamicClustering");
 	}
 		
 	/**
@@ -107,7 +111,10 @@ public class SimpleSatelliteInterface extends NetworkInterface {
 	 * that are out of range and creates new ones).
 	 */
 	public void update() {
-	
+		//update the satellite link info
+		List<DTNHost> allowConnectedList = 
+				((SatelliteMovement)this.getHost().getMovementModel()).updateSatelliteLinkInfo();
+		
 		if (!this.getHost().multiThread){
 			if (optimizer == null) {
 				return; /* nothing to do */
@@ -150,22 +157,41 @@ public class SimpleSatelliteInterface extends NetworkInterface {
 			if (!this.getHost().multiThread) {
 				// Then find new possible connections
 				interfaces = optimizer.getNearInterfaces(this);
-			}
-			
-			/**如果在范围内的这个节点既不是同一平面内的，又不是通讯节点，就不进行连接，节省开销**/
-			
-			if (allowToConnectNodesInLEOPlane == null){
-				throw new SimError("初始化没有计算每个轨道平面内的节点，并存入NetworkInterface当中！");
-			}
+			}				
+
 			for (NetworkInterface i : interfaces) {	
-				boolean allowConnection = true;
-				switch(i.getHost().getSatelliteType()){
+				/*检查是否处在允许建链的列表当中，否则不允许建立链路*/
+				boolean allowConnection = false;
+				switch(this.getHost().getSatelliteType()){
+				/*如果在范围内的这个节点既不是同一平面内的，又不是通讯节点，就不进行连接，节省开销**/
 					case "LEO":{						
-						if (!allowToConnectNodesInLEOPlane.contains(i.getHost()))
-							allowConnection = false;
+						//LEO 只允许和MEO层建立链路
+						if (dynamicClustering && i.getHost().getSatelliteType().contains("MEO")){
+							allowConnection = true;
+							break;
+						}
+						if (allowConnectedList.contains(i.getHost()))
+							allowConnection = true;//即进行连接
 						break;
 					}
 					case "MEO":{
+						//MEO允许和LEO和GEO层建立链路
+						if (dynamicClustering && (i.getHost().getSatelliteType().contains("LEO") 
+								|| i.getHost().getSatelliteType().contains("GEO"))){
+							allowConnection = true;
+							break;
+						}
+						if (allowConnectedList.contains(i.getHost()))
+							allowConnection = true;//即进行连接
+						break;
+					}
+					case "GEO":{
+						if (i.getHost().getSatelliteType().contains("MEO")){
+							allowConnection = true;
+							break;
+						}
+						if (allowConnectedList.contains(i.getHost()))
+							allowConnection = true;//即进行连接
 						break;
 					}
 				}
@@ -224,13 +250,14 @@ public class SimpleSatelliteInterface extends NetworkInterface {
 	public int getTransmitSpeed() {
 		return this.radioTransmitSpeed;
 	}
-	/**
-	 * return the transmit range of this interface
-	 */
+	
+	/** return the transmit range of this interface */
 	@Override
 	public double getTransmitRange(){
 		return this.radioTransmitRange;
 	}
+	
+	/** return the type of this interface */
 	@Override
 	public String getInterfaceType(){
 		return this.interfaceType;
