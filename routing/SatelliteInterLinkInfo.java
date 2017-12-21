@@ -262,7 +262,7 @@ public class SatelliteInterLinkInfo {
     	int totalLEOPlane = s.getInt("nrofLEOPlanes");
     	int staticNrofManageLEOPlane = totalLEOPlane / totalMEOPlane;//平均每个MEO平面需要管理的LEO轨道平面数
     	
-    	System.out.println("hosts size  "+getHosts().size());
+//    	System.out.println("hosts size  "+getHosts().size());
     	/*find all MEO orbit plane and their first MEO nodes*/
     	List<DTNHost> allMEOPlane = new ArrayList<DTNHost>();
     	for (int i = LEO_TOTAL_SATELLITES; i < LEO_TOTAL_SATELLITES + 
@@ -534,7 +534,7 @@ public class SatelliteInterLinkInfo {
 
             int serialNumberOfPlane = thisHostAddress/NROF_S_EACHPLANE + 1;
             int destinationSerialNumberOfPlane = to.getAddress()/NROF_S_EACHPLANE + 1;
-            System.out.println(thisNode+" src plane: "+serialNumberOfPlane+"  "+to+" des plane: "+destinationSerialNumberOfPlane);
+//            System.out.println(thisNode+" src plane: "+serialNumberOfPlane+"  "+to+" des plane: "+destinationSerialNumberOfPlane);
             if (abs(serialNumberOfPlane - destinationSerialNumberOfPlane) <= 1 ||
                     abs(serialNumberOfPlane - destinationSerialNumberOfPlane) >= LEO_TOTAL_PLANE){
                 int startNumber = NROF_S_EACHPLANE * (destinationSerialNumberOfPlane - 1);//此轨道平面内的节点，起始编号
