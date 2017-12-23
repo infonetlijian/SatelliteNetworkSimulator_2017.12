@@ -1,6 +1,6 @@
 #
 # Default settings for the simulation
-# é€šä¿¡èŒƒå›´range=6000ã€ä¼ è¾“é€Ÿåº¦speed=500ã€æ¶ˆæ¯ç”Ÿå­˜æ—¶é—´ttl=3
+# Í¨ĞÅ·¶Î§range=6000¡¢´«ÊäËÙ¶Èspeed=500¡¢ÏûÏ¢Éú´æÊ±¼ättl=3
 #
 
 #User Setting
@@ -16,15 +16,15 @@ userSetting.hostsMode = normal
 #userSetting.nrofPlane = 3
 userSetting.orbitPlaneAngle = 45
 
-#ç¼“å­˜ç›¸å…³å‚æ•°
+#»º´æÏà¹Ø²ÎÊı
 userSetting.EnableCache = false
 #userSetting.EnableCache = false
 userSetting.RandomDropMessage = false
 Group.nrofFile = 60
 Group.filebuffersize = 1000k
-#ç¼“å­˜ç›¸å…³å‚æ•°
+#»º´æÏà¹Ø²ÎÊı
 
-# é“¾è·¯æ¨¡å—é…ç½®
+# Á´Â·Ä£¿éÅäÖÃ
 # one satellite node can bind multiple interfaces
 Group.nrofInterfaces = 2
 Group.interface1 = Interface1
@@ -32,46 +32,46 @@ Group.interface2 = Interface2
 Interface1.type = SimpleSatelliteInterface
 Interface1.linkDelayRange = 0.1,1
 Interface1.transmitSpeed = 500k
-Interface1.transmitRange = 7500
+Interface1.transmitRange = 15000
 Interface2.type = SatelliteLaserInterface
 Interface2.linkDelayRange = 10,100
 Interface2.transmitSpeed = 200M
-Interface2.transmitRange = 10000
-# è®¾ç½®é˜ˆå€¼ï¼Œå¤§äºæ­¤é˜ˆå€¼é€šè¿‡æ¿€å…‰é“¾è·¯èµ°ï¼Œå°äºæ­¤é˜ˆå€¼çš„ä»å¾®æ³¢é“¾è·¯èµ°
+Interface2.transmitRange = 20000
+# ÉèÖÃãĞÖµ£¬´óÓÚ´ËãĞÖµÍ¨¹ı¼¤¹âÁ´Â·×ß£¬Ğ¡ÓÚ´ËãĞÖµµÄ´ÓÎ¢²¨Á´Â·×ß
 Interface.MessageThreshold = 1M
-# é“¾è·¯ä¸­æ–­æ¦‚ç‡
+# Á´Â·ÖĞ¶Ï¸ÅÂÊ
 Interface.enableInterrupt = true
 Interface.probabilityOfInterrupt = 0.01
-# é“¾è·¯ä¸­æ–­é‡ä¼ æ¬¡æ•°
+# Á´Â·ÖĞ¶ÏÖØ´«´ÎÊı
 Interface.reTransmitTime = 2
-# æ˜¯å¦å…è®¸åŠ¨æ€åˆ†ç°‡
+# ÊÇ·ñÔÊĞí¶¯Ì¬·Ö´Ø
 Interface.DynamicClustering = true
 
 
-#åˆ†ç°‡è·¯ç”±ç›¸å…³å‚æ•°
+#·Ö´ØÂ·ÓÉÏà¹Ø²ÎÊı
 #clusterCheckInterval unit:seconds
 Group.clusterCheckInterval = 60
 #bytes
 Group.comfirmMessageSize = 1
-#åˆ†ç°‡è·¯ç”±ç›¸å…³å‚æ•°
+#·Ö´ØÂ·ÓÉÏà¹Ø²ÎÊı
 
-# LEOå«æ˜ŸèŠ‚ç‚¹å‚æ•°
+# LEOÎÀĞÇ½Úµã²ÎÊı
 Group.nrofCommunicationNodesInEachPlane = 4
-Group.nrofLEOPlanes = 4
+Group.nrofLEOPlanes = 8
 Group.LEO_OrbitPlaneAngle = 6
 Group.LEO_Eccentricity = 0
 Group.LEO_Radius = 500
 Group.nrofLEO = 80
 
-# MEOå«æ˜ŸèŠ‚ç‚¹å‚æ•°
-Group.EnableMEO = false
+# MEOÎÀĞÇ½Úµã²ÎÊı
+Group.EnableMEO = true
 Group.MEO_OrbitPlaneAngle = 60
 Group.MEO_Radius = 12000
 Group.nrofMEO = 16
 Group.nrofMEOPlane = 4
 Group.MEO_Eccentricity = 0
 
-# GEOå«æ˜ŸèŠ‚ç‚¹å‚æ•°
+# GEOÎÀĞÇ½Úµã²ÎÊı
 Group.EnableGEO = false
 Group.GEO_OrbitPlaneAngle = 60
 Group.GEO_Radius = 35786
@@ -104,11 +104,11 @@ Scenario.endTime = 160
 
 # Transmit speed of 2 Mbps = 250kBps
 Interface.transmitSpeed = 250k
-#æ³¨æ„ï¼šONEä¸­è·ç¦»å•ä½æ˜¯meters
-#ç”±äºJATä¸­è·ç¦»å•ä½ä¸ºkmï¼Œå› æ­¤æˆ‘ä»¬å°†ONEä¸­çš„è·ç¦»å•ä½ç»Ÿä¸€è§†ä¸ºkmï¼Œè¿™æ ·åªä¼šåœ¨è‡ªå¸¦çš„å›¾å½¢ç•Œé¢å•ä½ä¸Šäº§ç”Ÿè¯¯è§£ï¼Œä½†å†…éƒ¨ç¨‹åºçš„é€»è¾‘ä¸Šæ²¡æœ‰é—®é¢˜
+#×¢Òâ£ºONEÖĞ¾àÀëµ¥Î»ÊÇmeters
+#ÓÉÓÚJATÖĞ¾àÀëµ¥Î»Îªkm£¬Òò´ËÎÒÃÇ½«ONEÖĞµÄ¾àÀëµ¥Î»Í³Ò»ÊÓÎªkm£¬ÕâÑùÖ»»áÔÚ×Ô´øµÄÍ¼ĞÎ½çÃæµ¥Î»ÉÏ²úÉúÎó½â£¬µ«ÄÚ²¿³ÌĞòµÄÂß¼­ÉÏÃ»ÓĞÎÊÌâ
 #Interface.transmitRange = 2000
 
-# ç”¨äºå»ºç«‹é“¾è·¯æµ‹è¯•ï¼Œæé«˜é“¾è·¯å»ºç«‹æ¦‚ç‡
+# ÓÃÓÚ½¨Á¢Á´Â·²âÊÔ£¬Ìá¸ßÁ´Â·½¨Á¢¸ÅÂÊ
 Interface.transmitRange = 4000
 
 
@@ -134,15 +134,15 @@ Interface.transmitRange = 4000
 
 
 # Common settings for all groups
-#Group.movementModel = PredictableMovementè‡ªå·±åˆ›å»ºçš„æ–°è¿åŠ¨æ¨¡å‹ï¼Œé‡Œé¢å‡½æ•°æš‚æ—¶å‡æ²¡æœ‰è°ƒç”¨
+#Group.movementModel = PredictableMovement×Ô¼º´´½¨µÄĞÂÔË¶¯Ä£ĞÍ£¬ÀïÃæº¯ÊıÔİÊ±¾ùÃ»ÓĞµ÷ÓÃ
 Group.movementModel =  SatelliteMovement
 #Group.movementModel =  StationaryMovement
 #Group.nodeLocation=[0,3000; 0,2000]
 
-#æ˜¯å¦å¯ç”¨å¤šçº¿ç¨‹
+#ÊÇ·ñÆôÓÃ¶àÏß³Ì
 userSetting.multiThread = false
 
-#èŠ‚ç‚¹é—´é“¾è·¯æ›´æ–°æ—¶ï¼Œè®¡ç®—æ¨¡å¼é€‰æ‹©
+#½Úµã¼äÁ´Â·¸üĞÂÊ±£¬¼ÆËãÄ£Ê½Ñ¡Ôñ
 #MovementModel.judgeNearInterfaceMode = Fast-Grid
 MovementModel.judgeNearInterfaceMode = Ergodic
 
@@ -152,8 +152,8 @@ Group.sendQueue = 2
 
 
 
-#comfirmTtlä¸æ›´æ–°é—´éš”æ—¶é—´MEOCheckIntervalï¼Œ2è€…è®¾ä¸º10åˆ†ä¹‹ä¸€çš„å…³ç³»
-#åœ¨messageå‡½æ•°ä¸­TTLè®¡ç®—æ˜¯ä»¥ä¸€åˆ†é’Ÿä¸ºå•ä½
+#comfirmTtlÓë¸üĞÂ¼ä¸ôÊ±¼äMEOCheckInterval£¬2ÕßÉèÎª10·ÖÖ®Ò»µÄ¹ØÏµ
+#ÔÚmessageº¯ÊıÖĞTTL¼ÆËãÊÇÒÔÒ»·ÖÖÓÎªµ¥Î»
 Group.comfirmTtl = 1
 Group.MEOCheckInterval = 60
 
@@ -162,12 +162,12 @@ Group.HelloInterval = 2
 Group.HelloTTL = 1
 Group.HelloMessageSize = 1
 
-#WalkerStar-æè½¨é“
+#WalkerStar-¼«¹ìµÀ
 #Group.Constellation = WalkerStar
-#WalkerDelta-å€¾æ–œè½¨é“
+#WalkerDelta-ÇãĞ±¹ìµÀ
 Group.Constellation = WalkerDelta
 
-#routerè·¯ç”±è‡ªå·±åˆ›å»º
+#routerÂ·ÓÉ×Ô¼º´´½¨
 #Group.router = FirstContactRouter
 #Group.router = DirectDeliveryRouter
 #Group.router = EpidemicRouter
@@ -180,13 +180,14 @@ Group.Constellation = WalkerDelta
 #Group.router = SourceRoutingDijsktraSearchBasedonTemporalGraph
 
 #Group.router = DirectDeliveryRouter
-Group.router = ShortestPathFirstRouter
+#Group.router = ShortestPathFirstRouter
 #Group.router = OptimizedClusteringRouter
-#Group.router = DynamicMultiLayerSatelliteRouter
+Group.router = DynamicMultiLayerSatelliteRouter
+DynamicMultiLayerSatelliteRouter.Optimized = false
 
-#åˆ†ç°‡è·¯ç”±
+#·Ö´ØÂ·ÓÉ
 #Group.router = ClusteringRouter
-#å¯¹äºç½‘æ ¼è·¯ç”±çš„è®¡ç®—æ¨¡å¼
+#¶ÔÓÚÍø¸ñÂ·ÓÉµÄ¼ÆËãÄ£Ê½
 #Group.router = NetGridRouter
 #Group.gridUpdateOption = preOrbitCalculation
 #Group.gridUpdateOption = onlineOrbitCalculation
@@ -198,7 +199,7 @@ Group.Pre_or_onlineOrbitCalculation = onlineOrbitCalculation
 #Group.router = CGR
 Group.router.CGR.linkDuration = 3
 Group.router.CGR.type = NoPreContactPlanDesign
-#LinkDurationä¹˜ä»¥updateIntervalä¸ºçœŸå®é“¾è·¯æŒç»­æ—¶é—´
+#LinkDuration³ËÒÔupdateIntervalÎªÕæÊµÁ´Â·³ÖĞøÊ±¼ä
 Group.router.CGRLinkDurationTimesOfUpdateInterval = 10
 
 #Group.router = DijsktraRouter
@@ -235,11 +236,10 @@ Events1.interval = 1,1
 # Message sizes (500kB - 1MB)
 
 #Events1.size = 100k,1M
-Events1.size = 10k,200k
+Events1.size = 100k,100k
 # range of message source/destination addresses
-#Events1.hosts = [0,9;0,19;0,29;0,39;0,49]ä¿®æ”¹ï¼Œæ³¨æ„hostså’ŒtohostsåŒ…æ‹¬ä¸‹ç•Œä½†ä¸åŒ…æ‹¬ä¸Šç•Œï¼Œå³[0, 9)
-Events1.hosts = [0,96]
-
+#Events1.hosts = [0,9;0,19;0,29;0,39;0,49]ĞŞ¸Ä£¬×¢ÒâhostsºÍtohosts°üÀ¨ÏÂ½çµ«²»°üÀ¨ÉÏ½ç£¬¼´[0, 9)
+Events1.hosts = [0,24]
 # Message ID prefix
 Events1.prefix = M
 
@@ -278,7 +278,7 @@ SprayAndWaitRouter.binaryMode = true
 
 ## Optimization settings -- these affect the speed of the simulation
 ## see World class for details.
-#åœ¨world.javaä¸­çš„initSettingså‡½æ•°ä¸­è¯»å–
+#ÔÚworld.javaÖĞµÄinitSettingsº¯ÊıÖĞ¶ÁÈ¡
 Optimization.cellSizeMult = 5
 Optimization.randomizeUpdateOrder = true
 
