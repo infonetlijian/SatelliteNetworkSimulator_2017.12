@@ -438,10 +438,7 @@ public abstract class ActiveRouter extends MessageRouter {
 	protected Connection tryMessagesToConnections(List<Message> messages,
 			List<Connection> connections) {
 		for (int i=0, n=connections.size(); i<n; i++) {
-			Connection con = connections.get(i);
-			
-			System.out.println("Active.java "+"链路类型："+con.getLinkType() + "  链路传输速度："+con.getSpeed());
-			
+			Connection con = connections.get(i);			
 			Message started = tryAllMessages(con, messages); 
 			if (started != null) { 
 				return con;
@@ -596,7 +593,7 @@ public abstract class ActiveRouter extends MessageRouter {
 		
 		/* in theory we can have multiple sending connections even though
 		  currently all routers allow only one concurrent sending connection */
-
+		
 		for (int i=0; i<this.sendingConnections.size(); ) {
 			boolean removeCurrent = false;
 			Connection con = sendingConnections.get(i);
@@ -615,7 +612,7 @@ public abstract class ActiveRouter extends MessageRouter {
 					}
 				}
 			}else{
-				System.out.println("当前节点为："+this.getHost()+"缓存中不存在消息：" + Id  + " 当前链路为："+con);
+//				System.out.println("当前节点为："+this.getHost()+"缓存中不存在消息：" + Id  + " 当前链路为："+con);
 //				出现这个问题是由于具有多个链路存在，但是只选择了一条链路用于传输消息，传输完成之后就将消息删除了，但是其他的链路还继续尝试着发送消息！！！
 			}
 
