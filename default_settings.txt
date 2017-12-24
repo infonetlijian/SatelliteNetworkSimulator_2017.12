@@ -1,6 +1,6 @@
 #
 # Default settings for the simulation
-# 通信范围range=6000、传输速度speed=500、消息生存时间ttl=3
+# 閫氫俊鑼冨洿range=6000銆佷紶杈撻�熷害speed=500銆佹秷鎭敓瀛樻椂闂磘tl=3
 #
 
 #User Setting
@@ -16,17 +16,17 @@ userSetting.hostsMode = normal
 #userSetting.nrofPlane = 3
 userSetting.orbitPlaneAngle = 45
 
-#缓存相关参数
+#缂撳瓨鐩稿叧鍙傛暟
 userSetting.EnableCache = false
 #userSetting.EnableCache = false
 userSetting.RandomDropMessage = false
 Group.nrofFile = 60
 Group.filebuffersize = 1000k
-#缓存相关参数
+#缂撳瓨鐩稿叧鍙傛暟
 
-# 链路模块配置
+# 閾捐矾妯″潡閰嶇疆
 # one satellite node can bind multiple interfaces
-Group.nrofInterfaces = 2
+Group.nrofInterfaces = 1
 Group.interface1 = Interface1
 Group.interface2 = Interface2
 Interface1.type = SimpleSatelliteInterface
@@ -41,30 +41,31 @@ Interface2.transmitRange = 20000
 # 设置阈值，大于此阈值通过激光链路走，小于此阈值的从微波链路走
 Interface.MessageThreshold = 1M
 # 链路中断概率
-Interface.enableInterrupt = true
-Interface.probabilityOfInterrupt = 0.01
+Interface.enableInterrupt = false
+Interface.probabilityOfInterrupt = 0.001
 # 链路中断重传次数
 Interface.reTransmitTime = 2
-# 是否允许动态分簇
+# 鏄惁鍏佽鍔ㄦ�佸垎绨�
 Interface.DynamicClustering = true
 
 
-#分簇路由相关参数
+#鍒嗙皣璺敱鐩稿叧鍙傛暟
 #clusterCheckInterval unit:seconds
 Group.clusterCheckInterval = 60
 #bytes
 Group.comfirmMessageSize = 1
-#分簇路由相关参数
+#鍒嗙皣璺敱鐩稿叧鍙傛暟
 
-# LEO卫星节点参数
+# LEO鍗槦鑺傜偣鍙傛暟
 Group.nrofCommunicationNodesInEachPlane = 4
+Group.nrofLEO = 80
 Group.nrofLEOPlanes = 8
-Group.LEO_OrbitPlaneAngle = 6
+Group.LEO_OrbitPlaneAngle = 60
 Group.LEO_Eccentricity = 0
 Group.LEO_Radius = 500
-Group.nrofLEO = 64
 
-# MEO卫星节点参数
+
+# MEO鍗槦鑺傜偣鍙傛暟
 Group.EnableMEO = true
 Group.MEO_OrbitPlaneAngle = 60
 Group.MEO_Radius = 12000
@@ -72,7 +73,7 @@ Group.nrofMEO = 16
 Group.nrofMEOPlane = 4
 Group.MEO_Eccentricity = 0
 
-# GEO卫星节点参数
+# GEO鍗槦鑺傜偣鍙傛暟
 Group.EnableGEO = false
 Group.GEO_OrbitPlaneAngle = 60
 Group.GEO_Radius = 35786
@@ -87,9 +88,9 @@ Scenario.nrofHostGroups = 1
 ## Scenario settings
 Scenario.name = satellite network simulation
 Scenario.simulateConnections = true
-Scenario.updateInterval = 0.1
+Scenario.updateInterval = 1
 # 43200s == 12h
-Scenario.endTime = 160
+Scenario.endTime = 1600
 
 
 ## Interface-specific settings:
@@ -105,11 +106,11 @@ Scenario.endTime = 160
 
 # Transmit speed of 2 Mbps = 250kBps
 Interface.transmitSpeed = 250k
-#注意：ONE中距离单位是meters
-#由于JAT中距离单位为km，因此我们将ONE中的距离单位统一视为km，这样只会在自带的图形界面单位上产生误解，但内部程序的逻辑上没有问题
+#娉ㄦ剰锛歄NE涓窛绂诲崟浣嶆槸meters
+#鐢变簬JAT涓窛绂诲崟浣嶄负km锛屽洜姝ゆ垜浠皢ONE涓殑璺濈鍗曚綅缁熶竴瑙嗕负km锛岃繖鏍峰彧浼氬湪鑷甫鐨勫浘褰㈢晫闈㈠崟浣嶄笂浜х敓璇В锛屼絾鍐呴儴绋嬪簭鐨勯�昏緫涓婃病鏈夐棶棰�
 #Interface.transmitRange = 2000
 
-# 用于建立链路测试，提高链路建立概率
+# 鐢ㄤ簬寤虹珛閾捐矾娴嬭瘯锛屾彁楂橀摼璺缓绔嬫鐜�
 Interface.transmitRange = 4000
 
 
@@ -135,15 +136,15 @@ Interface.transmitRange = 4000
 
 
 # Common settings for all groups
-#Group.movementModel = PredictableMovement自己创建的新运动模型，里面函数暂时均没有调用
+#Group.movementModel = PredictableMovement鑷繁鍒涘缓鐨勬柊杩愬姩妯″瀷锛岄噷闈㈠嚱鏁版殏鏃跺潎娌℃湁璋冪敤
 Group.movementModel =  SatelliteMovement
 #Group.movementModel =  StationaryMovement
 #Group.nodeLocation=[0,3000; 0,2000]
 
-#是否启用多线程
+#鏄惁鍚敤澶氱嚎绋�
 userSetting.multiThread = false
 
-#节点间链路更新时，计算模式选择
+#鑺傜偣闂撮摼璺洿鏂版椂锛岃绠楁ā寮忛�夋嫨
 #MovementModel.judgeNearInterfaceMode = Fast-Grid
 MovementModel.judgeNearInterfaceMode = Ergodic
 
@@ -153,8 +154,8 @@ Group.sendQueue = 2
 
 
 
-#comfirmTtl与更新间隔时间MEOCheckInterval，2者设为10分之一的关系
-#在message函数中TTL计算是以一分钟为单位
+#comfirmTtl涓庢洿鏂伴棿闅旀椂闂碝EOCheckInterval锛�2鑰呰涓�10鍒嗕箣涓�鐨勫叧绯�
+#鍦╩essage鍑芥暟涓璗TL璁＄畻鏄互涓�鍒嗛挓涓哄崟浣�
 Group.comfirmTtl = 1
 Group.MEOCheckInterval = 60
 
@@ -163,12 +164,12 @@ Group.HelloInterval = 2
 Group.HelloTTL = 1
 Group.HelloMessageSize = 1
 
-#WalkerStar-极轨道
+#WalkerStar-鏋佽建閬�
 #Group.Constellation = WalkerStar
-#WalkerDelta-倾斜轨道
+#WalkerDelta-鍊炬枩杞ㄩ亾
 Group.Constellation = WalkerDelta
 
-#router路由自己创建
+#router璺敱鑷繁鍒涘缓
 #Group.router = FirstContactRouter
 #Group.router = DirectDeliveryRouter
 #Group.router = EpidemicRouter
@@ -181,15 +182,14 @@ Group.Constellation = WalkerDelta
 #Group.router = SourceRoutingDijsktraSearchBasedonTemporalGraph
 
 #Group.router = DirectDeliveryRouter
-#Group.router = ShortestPathFirstRouter
+Group.router = ShortestPathFirstRouter
 #Group.router = OptimizedClusteringRouter
 Group.router = DynamicMultiLayerSatelliteRouter
 DynamicMultiLayerSatelliteRouter.Optimized = false
 
-
-#分簇路由
+#鍒嗙皣璺敱
 #Group.router = ClusteringRouter
-#对于网格路由的计算模式
+#瀵逛簬缃戞牸璺敱鐨勮绠楁ā寮�
 #Group.router = NetGridRouter
 #Group.gridUpdateOption = preOrbitCalculation
 #Group.gridUpdateOption = onlineOrbitCalculation
@@ -201,7 +201,7 @@ Group.Pre_or_onlineOrbitCalculation = onlineOrbitCalculation
 #Group.router = CGR
 Group.router.CGR.linkDuration = 3
 Group.router.CGR.type = NoPreContactPlanDesign
-#LinkDuration乘以updateInterval为真实链路持续时间
+#LinkDuration涔樹互updateInterval涓虹湡瀹為摼璺寔缁椂闂�
 Group.router.CGRLinkDurationTimesOfUpdateInterval = 10
 
 #Group.router = DijsktraRouter
@@ -218,7 +218,7 @@ Group.msgTtl = 10
 
 
 #Group.nrofHosts = [10;20;30;40;50]
-Group.nrofHosts = 24
+Group.nrofHosts = 96
 
 # group1 (pedestrians) specific settings
 Group1.groupID = Node
@@ -240,8 +240,9 @@ Events1.interval = 1,1
 #Events1.size = 100k,1M
 Events1.size = 10k,2000k
 # range of message source/destination addresses
+
 #Events1.hosts = [0,9;0,19;0,29;0,39;0,49]修改，注意hosts和tohosts包括下界但不包括上界，即[0, 9)
-Events1.hosts = [0,24]
+Events1.hosts = [0,80]
 # Message ID prefix
 Events1.prefix = M
 
@@ -280,7 +281,7 @@ SprayAndWaitRouter.binaryMode = true
 
 ## Optimization settings -- these affect the speed of the simulation
 ## see World class for details.
-#在world.java中的initSettings函数中读取
+#鍦╳orld.java涓殑initSettings鍑芥暟涓鍙�
 Optimization.cellSizeMult = 5
 Optimization.randomizeUpdateOrder = true
 

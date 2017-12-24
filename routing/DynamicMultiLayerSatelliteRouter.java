@@ -60,14 +60,14 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     public static final String COMFIRMTTL_S = "comfirmTtl";
     /**
      * Decides the message transmitted through radio link or laser link
-     * according to this message size threshold£¬ -setting id ({@value})
+     * according to this message size thresholdï¼Œ -setting id ({@value})
      */
     public static final String MSG_SIZE_THRESHOLD_S = "MessageThreshold";
     /** indicates the type of link*/
     public static final String LASER_LINK = "LaserInterface";
     /** indicates the type of link*/
 	public static final String RADIO_LINK = "RadioInterface";
-    /** light speed£¬approximate 3*10^8m/s */
+    /** light speedï¼Œapproximate 3*10^8m/s */
     private static final double LIGHTSPEED = 299792458;
 
     /** indicate the transmission radius of each satellite -setting id ({@value} */
@@ -89,25 +89,25 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     private static Random random;
     
     /** total number of LEO satellites*/
-    private static int LEO_TOTAL_SATELLITES;//×Ü½ÚµãÊı
+    private static int LEO_TOTAL_SATELLITES;//æ€»èŠ‚ç‚¹æ•°
     /** total number of LEO plane*/
-    private static int LEO_TOTAL_PLANE;//×Ü¹ìµÀÆ½ÃæÊı
+    private static int LEO_TOTAL_PLANE;//æ€»è½¨é“å¹³é¢æ•°
     /** number of hosts in each LEO plane*/
-    private static int LEO_NROF_S_EACHPLANE;//Ã¿¸öÆ½ÃæÉÏµÄÎÀĞÇÊı
+    private static int LEO_NROF_S_EACHPLANE;//æ¯ä¸ªå¹³é¢ä¸Šçš„å«æ˜Ÿæ•°
     
     /** total number of MEO satellites*/
-    private static int MEO_TOTAL_SATELLITES;//×Ü½ÚµãÊı
+    private static int MEO_TOTAL_SATELLITES;//æ€»èŠ‚ç‚¹æ•°
     /** total number of MEO plane*/
-    private static int MEO_TOTAL_PLANE;//×Ü¹ìµÀÆ½ÃæÊı
+    private static int MEO_TOTAL_PLANE;//æ€»è½¨é“å¹³é¢æ•°
     /** number of hosts in each MEO plane*/
-    private static int MEO_NROF_S_EACHPLANE;//Ã¿¸öÆ½ÃæÉÏµÄÎÀĞÇÊı
+    private static int MEO_NROF_S_EACHPLANE;//æ¯ä¸ªå¹³é¢ä¸Šçš„å«æ˜Ÿæ•°
     
     /** total number of GEO satellites*/
-    private static int GEO_TOTAL_SATELLITES;//×Ü½ÚµãÊı
+    private static int GEO_TOTAL_SATELLITES;//æ€»èŠ‚ç‚¹æ•°
     /** total number of GEO plane*/
-    private static int GEO_TOTAL_PLANE;//×Ü¹ìµÀÆ½ÃæÊı
+    private static int GEO_TOTAL_PLANE;//æ€»è½¨é“å¹³é¢æ•°
     /** number of hosts in each GEO plane*/
-    private static int GEO_NROF_S_EACHPLANE;//Ã¿¸öÆ½ÃæÉÏµÄÎÀĞÇÊı
+    private static int GEO_NROF_S_EACHPLANE;//æ¯ä¸ªå¹³é¢ä¸Šçš„å«æ˜Ÿæ•°
 
     /** label indicates that if LEO_MEOClustering is initialized*/
     private static boolean LEO_MEOClusteringInitLable;
@@ -141,21 +141,21 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
         if (!initLabel){ 
         	//LEO
             Settings sat = new Settings("Group");
-            LEO_TOTAL_SATELLITES = sat.getInt("nrofLEO");//×Ü½ÚµãÊı
-            LEO_TOTAL_PLANE = sat.getInt("nrofLEOPlanes");//×Ü¹ìµÀÆ½ÃæÊı
-            LEO_NROF_S_EACHPLANE = LEO_TOTAL_SATELLITES/LEO_TOTAL_PLANE;//Ã¿¸ö¹ìµÀÆ½ÃæÉÏµÄ½ÚµãÊı
+            LEO_TOTAL_SATELLITES = sat.getInt("nrofLEO");//æ€»èŠ‚ç‚¹æ•°
+            LEO_TOTAL_PLANE = sat.getInt("nrofLEOPlanes");//æ€»è½¨é“å¹³é¢æ•°
+            LEO_NROF_S_EACHPLANE = LEO_TOTAL_SATELLITES/LEO_TOTAL_PLANE;//æ¯ä¸ªè½¨é“å¹³é¢ä¸Šçš„èŠ‚ç‚¹æ•°
             //MEO
             Settings s = new Settings("Group");
             if (s.getBoolean("EnableMEO")){
-                MEO_TOTAL_SATELLITES = s.getInt("nrofMEO");//×Ü½ÚµãÊı
-                MEO_TOTAL_PLANE = s.getInt("nrofMEOPlane");//×Ü¹ìµÀÆ½ÃæÊı
-                MEO_NROF_S_EACHPLANE = MEO_TOTAL_SATELLITES/MEO_TOTAL_PLANE;//Ã¿¸ö¹ìµÀÆ½ÃæÉÏµÄ½ÚµãÊı
+                MEO_TOTAL_SATELLITES = s.getInt("nrofMEO");//æ€»èŠ‚ç‚¹æ•°
+                MEO_TOTAL_PLANE = s.getInt("nrofMEOPlane");//æ€»è½¨é“å¹³é¢æ•°
+                MEO_NROF_S_EACHPLANE = MEO_TOTAL_SATELLITES/MEO_TOTAL_PLANE;//æ¯ä¸ªè½¨é“å¹³é¢ä¸Šçš„èŠ‚ç‚¹æ•°
             }
             //GEO
             if (s.getBoolean("EnableGEO")){
-                GEO_TOTAL_SATELLITES = s.getInt("nrofMEO");//×Ü½ÚµãÊı
-                GEO_TOTAL_PLANE = s.getInt("nrofMEOPlane");//×Ü¹ìµÀÆ½ÃæÊı
-                GEO_NROF_S_EACHPLANE = MEO_TOTAL_SATELLITES/MEO_TOTAL_PLANE;//Ã¿¸ö¹ìµÀÆ½ÃæÉÏµÄ½ÚµãÊı
+                GEO_TOTAL_SATELLITES = s.getInt("nrofMEO");//æ€»èŠ‚ç‚¹æ•°
+                GEO_TOTAL_PLANE = s.getInt("nrofMEOPlane");//æ€»è½¨é“å¹³é¢æ•°
+                GEO_NROF_S_EACHPLANE = MEO_TOTAL_SATELLITES/MEO_TOTAL_PLANE;//æ¯ä¸ªè½¨é“å¹³é¢ä¸Šçš„èŠ‚ç‚¹æ•°
             }
                         
             random = new Random();
@@ -173,7 +173,7 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
         }
     }
     /**
-     * ÔÚNetworkInterfaceÀàÖĞÖ´ĞĞÁ´Â·ÖĞ¶Ïº¯Êıdisconnect()ºó£¬¶ÔÓ¦½ÚµãµÄrouterµ÷ÓÃ´Ëº¯Êı
+     * åœ¨NetworkInterfaceç±»ä¸­æ‰§è¡Œé“¾è·¯ä¸­æ–­å‡½æ•°disconnect()åï¼Œå¯¹åº”èŠ‚ç‚¹çš„routerè°ƒç”¨æ­¤å‡½æ•°
      */
     @Override
     public void changedConnection(Connection con) {
@@ -183,7 +183,7 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
 //			if(con.isTransferring()){
 //				if (con.getOtherNode(this.getHost()).getRouter().isIncomingMessage(con.getMessage().getId()))
 //					con.getOtherNode(this.getHost()).getRouter().removeFromIncomingBuffer(con.getMessage().getId(), this.getHost());
-//				super.addToMessages(con.getMessage(), false);//¶ÔÓÚÒòÎªÁ´Â·ÖĞ¶Ï¶ø¶ªÊ§µÄÏûÏ¢£¬ÖØĞÂ·Å»Ø·¢ËÍ·½µÄ¶ÓÁĞÖĞ£¬²¢ÇÒÉ¾³ı¶Ô·½½ÚµãµÄincomingĞÅÏ¢
+//				super.addToMessages(con.getMessage(), false);//å¯¹äºå› ä¸ºé“¾è·¯ä¸­æ–­è€Œä¸¢å¤±çš„æ¶ˆæ¯ï¼Œé‡æ–°æ”¾å›å‘é€æ–¹çš„é˜Ÿåˆ—ä¸­ï¼Œå¹¶ä¸”åˆ é™¤å¯¹æ–¹èŠ‚ç‚¹çš„incomingä¿¡æ¯
 //				System.out.println("message: "+con.getMessage());
 //			}
 //		}
@@ -193,7 +193,7 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     public void update() {
         super.update();
 
-        //¸ù¾İÏÈÑéĞÅÏ¢¶ÔLEO½øĞĞ·Ö×é£¬²¢È·¶¨¸÷¸öLEOµÄ¹Ì¶¨¹ÜÀíMEO½Úµã£¬´Ó¶øÎŞĞèĞÅÁî½»»¥½øĞĞ¶¯Ì¬·Ö´Ø
+        //æ ¹æ®å…ˆéªŒä¿¡æ¯å¯¹LEOè¿›è¡Œåˆ†ç»„ï¼Œå¹¶ç¡®å®šå„ä¸ªLEOçš„å›ºå®šç®¡ç†MEOèŠ‚ç‚¹ï¼Œä»è€Œæ— éœ€ä¿¡ä»¤äº¤äº’è¿›è¡ŒåŠ¨æ€åˆ†ç°‡
 //        if (!LEO_MEOClusteringInitLable)
 //            initLEO_MEOClusteringRelationship();
         
@@ -205,7 +205,7 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
 //        if (isTransferring()) { // judge the link is occupied or not
 //            return; // can't start a new transfer
 //        }
-        //helloProtocol();//Ö´ĞĞhello°üµÄÎ¬»¤¹¤×÷
+        //helloProtocol();//æ‰§è¡ŒhelloåŒ…çš„ç»´æŠ¤å·¥ä½œ
         if (!canStartTransfer())
             return;
 
@@ -248,7 +248,7 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
      */
     public List<Message> CollectionToList(Collection<Message> messages){
         List<Message> forMsg = new ArrayList<Message>();
-        for (Message msg : messages) {	//³¢ÊÔ·¢ËÍ¶ÓÁĞÀïµÄÏûÏ¢
+        for (Message msg : messages) {	//å°è¯•å‘é€é˜Ÿåˆ—é‡Œçš„æ¶ˆæ¯
             forMsg.add(msg);
         }
         return forMsg;
@@ -286,15 +286,15 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
      * @return
      */
     public boolean findPathToSend(Message msg) {
-        if (msgPathLabel == true) {//Èç¹ûÔÊĞíÔÚÏûÏ¢ÖĞĞ´ÈëÂ·¾¶ÏûÏ¢
-            if (msg.getProperty(MSG_ROUTERPATH) == null) {//Í¨¹ı°üÍ·ÊÇ·ñÒÑĞ´ÈëÂ·¾¶ĞÅÏ¢À´ÅĞ¶ÏÊÇ·ñĞèÒªµ¥¶À¼ÆËãÂ·ÓÉ(Í¬Ê±Ò²°üº¬ÁËÔ¤²âµÄ¿ÉÄÜ)
+        if (msgPathLabel == true) {//å¦‚æœå…è®¸åœ¨æ¶ˆæ¯ä¸­å†™å…¥è·¯å¾„æ¶ˆæ¯
+            if (msg.getProperty(MSG_ROUTERPATH) == null) {//é€šè¿‡åŒ…å¤´æ˜¯å¦å·²å†™å…¥è·¯å¾„ä¿¡æ¯æ¥åˆ¤æ–­æ˜¯å¦éœ€è¦å•ç‹¬è®¡ç®—è·¯ç”±(åŒæ—¶ä¹ŸåŒ…å«äº†é¢„æµ‹çš„å¯èƒ½)
                 Tuple<Message, Connection> t =
                         findPathFromRouterTabel(msg);
                 return sendMsg(t);
-            } else {//Èç¹ûÊÇÖĞ¼Ì½Úµã£¬¾Í¼ì²éÏûÏ¢Ëù´øµÄÂ·¾¶ĞÅÏ¢
+            } else {//å¦‚æœæ˜¯ä¸­ç»§èŠ‚ç‚¹ï¼Œå°±æ£€æŸ¥æ¶ˆæ¯æ‰€å¸¦çš„è·¯å¾„ä¿¡æ¯
                 Tuple<Message, Connection> t =
                         findPathFromMessage(msg);
-                assert t != null : "¶ÁÈ¡Â·¾¶ĞÅÏ¢Ê§°Ü£¡";
+                assert t != null : "è¯»å–è·¯å¾„ä¿¡æ¯å¤±è´¥ï¼";
                 return sendMsg(t);
             }
         } else {
@@ -334,8 +334,8 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
             		msg.removeProperty(MSG_ROUTERPATH);
             		return null;
             	}
-                nextHopAddress = routerPath.get(i + 1).getKey();//ÕÒµ½ÏÂÒ»Ìø½ÚµãµØÖ·
-                waitLable = routerPath.get(i + 1).getValue();//ÕÒµ½ÏÂÒ»ÌøÊÇ·ñĞèÒªµÈ´ıµÄ±êÖ¾Î»
+                nextHopAddress = routerPath.get(i + 1).getKey();//æ‰¾åˆ°ä¸‹ä¸€è·³èŠ‚ç‚¹åœ°å€
+                waitLable = routerPath.get(i + 1).getValue();//æ‰¾åˆ°ä¸‹ä¸€è·³æ˜¯å¦éœ€è¦ç­‰å¾…çš„æ ‡å¿—ä½
                 break;
             }
         }
@@ -474,31 +474,31 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
                 	optimzedShortestPathSearch(msg, this.getHosts());
                 	return;
                 }
-                //Ä¿µÄ½ÚµãÊÇ·ñÔÚ×ÔÉíËùÊô¹ìµÀÆ½ÃæÉÏ
+                //ç›®çš„èŠ‚ç‚¹æ˜¯å¦åœ¨è‡ªèº«æ‰€å±è½¨é“å¹³é¢ä¸Š
                 if (LEOci.getAllHostsInSamePlane().contains(to)){                	
                     findPathInSameLEOPlane(this.getHost(), to);
                 }
                 else{
-                	//¶ÔÓÚ·¢Íù²»ÊÇÍ¬Ò»¹ìµÀÆ½ÃæÉÏµÄÏûÏ¢£¬Í³Ò»ÏÈËÍÍù×î½üµÄÍ¨ĞÅ½Úµã
+                	//å¯¹äºå‘å¾€ä¸æ˜¯åŒä¸€è½¨é“å¹³é¢ä¸Šçš„æ¶ˆæ¯ï¼Œç»Ÿä¸€å…ˆé€å¾€æœ€è¿‘çš„é€šä¿¡èŠ‚ç‚¹
                 	if (this.getHost().getRouter().CommunicationSatellitesLabel){
-                        //¼ì²éÄ¿µÄ½ÚµãÊÇ·ñÔÚÁÚ¾Ó¹ìµÀÆ½ÃæÉÏ
+                        //æ£€æŸ¥ç›®çš„èŠ‚ç‚¹æ˜¯å¦åœ¨é‚»å±…è½¨é“å¹³é¢ä¸Š
                         List<DTNHost> hostsInNeighborOrbitPlane = LEOci.ifHostsInNeighborOrbitPlane(to);
-                        if (hostsInNeighborOrbitPlane != null){//²»Îª¿Õ£¬ÔòËµÃ÷ÔÚÁÚ¾Ó¹ìµÀÉÏ£¬ÇÒ·µ»ØµÄÊÇÁÚ¾Ó¹ìµÀµÄËùÓĞ½Úµã
-                        	//ÏÈ³¢ÊÔÍ¨¹ıÁÚ¾Ó¹ìµÀÍ¨ĞÅ½Úµã×ª·¢
+                        if (hostsInNeighborOrbitPlane != null){//ä¸ä¸ºç©ºï¼Œåˆ™è¯´æ˜åœ¨é‚»å±…è½¨é“ä¸Šï¼Œä¸”è¿”å›çš„æ˜¯é‚»å±…è½¨é“çš„æ‰€æœ‰èŠ‚ç‚¹
+                        	//å…ˆå°è¯•é€šè¿‡é‚»å±…è½¨é“é€šä¿¡èŠ‚ç‚¹è½¬å‘
                         	if(msgFromLEOForwardToNeighborPlane(msg, to))
                         		return;
                         }
-                        //·ñÔò£¬Ö±½ÓÍ¨¹ıMEO¹ÜÀí½Úµã×ª·¢
+                        //å¦åˆ™ï¼Œç›´æ¥é€šè¿‡MEOç®¡ç†èŠ‚ç‚¹è½¬å‘
                         msgFromCommunicationLEOForwardedByMEO(msg, to);
                     	
                 	}
-                	//×÷ÎªLEOÒ£¸Ğ½Úµã£¬Ö±½ÓÏÈ°ÑÊı¾İ´«µ½Í¨ĞÅ½ÚµãÉÏ
+                	//ä½œä¸ºLEOé¥æ„ŸèŠ‚ç‚¹ï¼Œç›´æ¥å…ˆæŠŠæ•°æ®ä¼ åˆ°é€šä¿¡èŠ‚ç‚¹ä¸Š
                 	else{
                     	DTNHost communicationLEO = findNearestCommunicationLEONodes(this.getHost());
                     	List<Tuple<Integer, Boolean>> path = findPathInSameLEOPlane(this.getHost(), communicationLEO);
                     	
                         if (!path.isEmpty()){
-                        	System.out.println("ÏÈ½»¸øÍ¨ĞÅLEO½Úµã½øĞĞ×ª·¢   to" + to);
+                        	System.out.println("å…ˆäº¤ç»™é€šä¿¡LEOèŠ‚ç‚¹è¿›è¡Œè½¬å‘   to" + to);
                             routerTable.put(to, path);
                         }
                 	}
@@ -512,7 +512,7 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
                 }
                 
             	if (this.getHost().getRouter().CommunicationSatellitesLabel){
-            		//Èç¹û×ÔÉíÊÇÍ¨ĞÅ½Úµã£¬ÔòÏÈ·¢ËÍµ½Óë×Ô¼ºÏàÁ¬½ÓµÄMEO½ÚµãÉÏ
+            		//å¦‚æœè‡ªèº«æ˜¯é€šä¿¡èŠ‚ç‚¹ï¼Œåˆ™å…ˆå‘é€åˆ°ä¸è‡ªå·±ç›¸è¿æ¥çš„MEOèŠ‚ç‚¹ä¸Š
             		//TODO
                    	List<DTNHost> searchArea = new ArrayList<DTNHost>();                  	
                    	searchArea.addAll(findMEOHosts());
@@ -520,15 +520,15 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
                    	//this.getMEOtoMEOTopology();
                 	optimzedShortestPathSearch(msg, searchArea);
                 	if (this.routerTable.get(to) != null)
-                		System.out.println(this.getHost()+" ÕÒµ½ÁËLEO to MEO µÄÂ·¾¶"+msg);
+                		System.out.println(this.getHost()+" æ‰¾åˆ°äº†LEO to MEO çš„è·¯å¾„"+msg);
             	}
-            	//×÷ÎªLEOÒ£¸Ğ½Úµã£¬Ö±½ÓÏÈ°ÑÊı¾İ´«µ½Í¨ĞÅ½ÚµãÉÏ
+            	//ä½œä¸ºLEOé¥æ„ŸèŠ‚ç‚¹ï¼Œç›´æ¥å…ˆæŠŠæ•°æ®ä¼ åˆ°é€šä¿¡èŠ‚ç‚¹ä¸Š
             	else{
                 	DTNHost communicationLEO = findNearestCommunicationLEONodes(this.getHost());
                 	List<Tuple<Integer, Boolean>> path = findPathInSameLEOPlane(this.getHost(), communicationLEO);
                 	
                     if (!path.isEmpty()){
-                    	System.out.println("ÏÈ½»¸øÍ¨ĞÅLEO½Úµã½øĞĞ×ª·¢   to" + to);
+                    	System.out.println("å…ˆäº¤ç»™é€šä¿¡LEOèŠ‚ç‚¹è¿›è¡Œè½¬å‘   to" + to);
                         routerTable.put(to, path);
                     }
             	}                                          
@@ -541,10 +541,10 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
                 	return;
                 }
                 if (to.getRouter().CommunicationSatellitesLabel){
-                    //TODO ¹¹½¨LEOºÍGEOµÄÍØÆË
+                    //TODO æ„å»ºLEOå’ŒGEOçš„æ‹“æ‰‘
                     HashMap<DTNHost, List<DTNHost>> topologyInfo = 
                     		getGEOtoLEOTopology(msg, to, this.getHost());//optimizedTopologyCalculation(MEOci.MEOList);//localTopologyCalculation(MEOci.MEOList);          
-                    //µ÷ÓÃËÑË÷Ëã·¨
+                    //è°ƒç”¨æœç´¢ç®—æ³•
                     DTNHost nearestCLEO = findNearestCommunicationLEONodes(this.getHost());
                     List<DTNHost> localHostsList = new ArrayList<DTNHost>();
                     localHostsList.addAll(findGEOHosts());
@@ -552,16 +552,16 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
                     localHostsList.add(nearestCLEO);
                 	this.shortestPathSearch(msg, topologyInfo, localHostsList);
                 	if (this.routerTable.containsKey(to))
-                		System.out.println("LEO to GEO" + this.getHost() + "ÕÒµ½ÁË×î¶ÌÂ·¾¶");
+                		System.out.println("LEO to GEO" + this.getHost() + "æ‰¾åˆ°äº†æœ€çŸ­è·¯å¾„");
                 	
                 }
-                //·ñÔòÏÈ½»¸øÍ¨ĞÅ½Úµã
+                //å¦åˆ™å…ˆäº¤ç»™é€šä¿¡èŠ‚ç‚¹
                 else{
                 	DTNHost communicationLEO = findNearestCommunicationLEONodes(this.getHost());
                 	List<Tuple<Integer, Boolean>> path = findPathInSameLEOPlane(this.getHost(), communicationLEO);
                 	
                     if (!path.isEmpty()){
-                    	System.out.println("ÏÈ½»¸øÍ¨ĞÅLEO½Úµã½øĞĞ×ª·¢   to" + to);
+                    	System.out.println("å…ˆäº¤ç»™é€šä¿¡LEOèŠ‚ç‚¹è¿›è¡Œè½¬å‘   to" + to);
                         routerTable.put(to, path);
                     }
                 }
@@ -582,27 +582,27 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
                   	optimzedShortestPathSearch(msg, this.getHosts());
                   	return;
             	  }
-                //Ä¿µÄ½ÚµãÊÇ·ñÊÇ¹ÜÀí½Úµã
+                //ç›®çš„èŠ‚ç‚¹æ˜¯å¦æ˜¯ç®¡ç†èŠ‚ç‚¹
             	if (to.getRouter().CommunicationSatellitesLabel){
-            		//Í¨¹ıMEO½ÚµãÖ±½Ó´«¸øLEO
-            		 HashMap<DTNHost, List<DTNHost>> topologyInfo = getMEOtoCommunicationLEOTopology(msg, to);//¹¹½¨ÍØÆË
-            		 //ÏŞ¶¨ËÑË÷µÄ½Úµã·¶Î§
+            		//é€šè¿‡MEOèŠ‚ç‚¹ç›´æ¥ä¼ ç»™LEO
+            		 HashMap<DTNHost, List<DTNHost>> topologyInfo = getMEOtoCommunicationLEOTopology(msg, to);//æ„å»ºæ‹“æ‰‘
+            		 //é™å®šæœç´¢çš„èŠ‚ç‚¹èŒƒå›´
             		 List<DTNHost> localHostsList = new ArrayList<DTNHost>(findMEOHosts());
             		 localHostsList.add(to);
             		 shortestPathSearch(msg, topologyInfo, localHostsList);
             	}
             	else{
             		DTNHost nearestCLEO = findNearestCommunicationLEONodes(to);
-	            	//ÏÈ·¢¸øÄ¿µÄLEO×î½üµÄÍ¨ĞÅLEO½ÚµãÉÏ£¬ÔÙÓÉËü½øĞĞ´¦Àí
-	           		HashMap<DTNHost, List<DTNHost>> topologyInfo = getMEOtoCommunicationLEOTopology(msg, nearestCLEO);//¹¹½¨ÍØÆË
-	           		//ÏŞ¶¨ËÑË÷µÄ½Úµã·¶Î§
+	            	//å…ˆå‘ç»™ç›®çš„LEOæœ€è¿‘çš„é€šä¿¡LEOèŠ‚ç‚¹ä¸Šï¼Œå†ç”±å®ƒè¿›è¡Œå¤„ç†
+	           		HashMap<DTNHost, List<DTNHost>> topologyInfo = getMEOtoCommunicationLEOTopology(msg, nearestCLEO);//æ„å»ºæ‹“æ‰‘
+	           		//é™å®šæœç´¢çš„èŠ‚ç‚¹èŒƒå›´
 	           		List<DTNHost> localHostsList = new ArrayList<DTNHost>(findMEOHosts());
 	           		localHostsList.add(nearestCLEO);
 	           		shortestPathSearch(msg, topologyInfo, localHostsList);
 	           		
 	            	if (this.routerTable.containsKey(nearestCLEO)){
-	            		System.out.println("ËÑË÷µ½Í¨¹ıMEO×ª·¢µÄ×î¶ÌÂ·¾¶£¡ to" + to);
-	            		this.routerTable.put(to, this.routerTable.get(nearestCLEO));//Ìí¼ÓÈ¥Ä¿µÄ½ÚµãµÄÂ·¾¶
+	            		System.out.println("æœç´¢åˆ°é€šè¿‡MEOè½¬å‘çš„æœ€çŸ­è·¯å¾„ï¼ to" + to);
+	            		this.routerTable.put(to, this.routerTable.get(nearestCLEO));//æ·»åŠ å»ç›®çš„èŠ‚ç‚¹çš„è·¯å¾„
 	            		return;
 	            	}  
             	}
@@ -617,9 +617,9 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
                 	optimzedShortestPathSearch(msg, allMEOandGEO);
                 	return;
                 }
-                //¸ÄÔìµÄ×î¶ÌÂ·¾¶Ëã·¨£¬ÓÃÓÚÌØÊâ³¡¾°£¬ĞèÒªÖ¸¶¨³ö·¢Ô´½Úµã£¬²¢¸ø¶¨ÍøÂçÍØÆË
-                HashMap<DTNHost, List<DTNHost>> topologyInfo = getMEOtoMEOTopology();//¹¹½¨ÍØÆË
-                //TODO ÍØÆËÖĞÓ¦¸ÃÌí¼ÓGEO½Úµã
+                //æ”¹é€ çš„æœ€çŸ­è·¯å¾„ç®—æ³•ï¼Œç”¨äºç‰¹æ®Šåœºæ™¯ï¼Œéœ€è¦æŒ‡å®šå‡ºå‘æºèŠ‚ç‚¹ï¼Œå¹¶ç»™å®šç½‘ç»œæ‹“æ‰‘
+                HashMap<DTNHost, List<DTNHost>> topologyInfo = getMEOtoMEOTopology();//æ„å»ºæ‹“æ‰‘
+                //TODO æ‹“æ‰‘ä¸­åº”è¯¥æ·»åŠ GEOèŠ‚ç‚¹
                 //shortestPathSearch(msg, topologyInfo, allMEOandGEO);    
                 shortestPathSearch(msg, topologyInfo, findMEOHosts()); 
                 break;
@@ -632,9 +632,9 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
                 	optimzedShortestPathSearch(msg, allMEOandGEO);
                 	return;
                 }
-              //¸ÄÔìµÄ×î¶ÌÂ·¾¶Ëã·¨£¬ÓÃÓÚÌØÊâ³¡¾°£¬ĞèÒªÖ¸¶¨³ö·¢Ô´½Úµã£¬²¢¸ø¶¨ÍøÂçÍØÆË
-                HashMap<DTNHost, List<DTNHost>> topologyInfo = getMEOtoMEOTopology();//¹¹½¨ÍØÆË
-                //TODO ¹¹½¨MEOºÍGEOµÄÍØÆË
+              //æ”¹é€ çš„æœ€çŸ­è·¯å¾„ç®—æ³•ï¼Œç”¨äºç‰¹æ®Šåœºæ™¯ï¼Œéœ€è¦æŒ‡å®šå‡ºå‘æºèŠ‚ç‚¹ï¼Œå¹¶ç»™å®šç½‘ç»œæ‹“æ‰‘
+                HashMap<DTNHost, List<DTNHost>> topologyInfo = getMEOtoMEOTopology();//æ„å»ºæ‹“æ‰‘
+                //TODO æ„å»ºMEOå’ŒGEOçš„æ‹“æ‰‘
                 throw new SimError("MEO to GEO");
                 //shortestPathSearch(msg, topologyInfo, allMEOandGEO);  
             }
@@ -653,11 +653,11 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
                 	return;
                 }
                 
-                //ÕÒµ½¹ÜÀí´Ë½ÚµãµÄMEO½Úµã£¬½»ÓÚËü½øĞĞ×ª·¢
-            	/**²ÉÓÃ×î¶ÌÂ·¾¶ËÑË÷Ëã·¨µÄ±äÖÖÀ´ÕÒ×îÓÅÂ·¾¶**/          
+                //æ‰¾åˆ°ç®¡ç†æ­¤èŠ‚ç‚¹çš„MEOèŠ‚ç‚¹ï¼Œäº¤äºå®ƒè¿›è¡Œè½¬å‘
+            	/**é‡‡ç”¨æœ€çŸ­è·¯å¾„æœç´¢ç®—æ³•çš„å˜ç§æ¥æ‰¾æœ€ä¼˜è·¯å¾„**/          
                 HashMap<DTNHost, List<DTNHost>> topologyInfo = 
                 		getGEOtoLEOTopology(msg, this.getHost(), to);//optimizedTopologyCalculation(MEOci.MEOList);//localTopologyCalculation(MEOci.MEOList);          
-                //µ÷ÓÃËÑË÷Ëã·¨
+                //è°ƒç”¨æœç´¢ç®—æ³•
                 DTNHost nearestCLEO = findNearestCommunicationLEONodes(to);
                 List<DTNHost> localHostsList = new ArrayList<DTNHost>();
                 localHostsList.addAll(findGEOHosts());
@@ -665,16 +665,16 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
                 localHostsList.add(nearestCLEO);
             	this.shortestPathSearch(msg, topologyInfo, localHostsList);
             	if (this.routerTable.containsKey(to))
-            		System.out.println("GEO" + this.getHost() + "ÕÒµ½ÁË×î¶ÌÂ·¾¶");
+            		System.out.println("GEO" + this.getHost() + "æ‰¾åˆ°äº†æœ€çŸ­è·¯å¾„");
             	
             	if (!to.getRouter().CommunicationSatellitesLabel){
 	            	if (this.routerTable.containsKey(nearestCLEO)){
-	            		System.out.println("ËÑË÷µ½Í¨¹ıMEO×ª·¢µÄ×î¶ÌÂ·¾¶£¡ to" + to);
-	            		this.routerTable.put(to, this.routerTable.get(nearestCLEO));//Ìí¼ÓÈ¥Ä¿µÄ½ÚµãµÄÂ·¾¶
+	            		System.out.println("æœç´¢åˆ°é€šè¿‡MEOè½¬å‘çš„æœ€çŸ­è·¯å¾„ï¼ to" + to);
+	            		this.routerTable.put(to, this.routerTable.get(nearestCLEO));//æ·»åŠ å»ç›®çš„èŠ‚ç‚¹çš„è·¯å¾„
 	            		return;
 	            	}  
             	}
-            	/**²ÉÓÃ×î¶ÌÂ·¾¶ËÑË÷Ëã·¨µÄ±äÖÖÀ´ÕÒ×îÓÅÂ·¾¶**/
+            	/**é‡‡ç”¨æœ€çŸ­è·¯å¾„æœç´¢ç®—æ³•çš„å˜ç§æ¥æ‰¾æœ€ä¼˜è·¯å¾„**/
             	
                 break;
             }
@@ -706,7 +706,7 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
         }
     }
     /**
-     * ÓÅ»¯·½·¨£¬Ö±½Ó¶ÁÈ¡ĞèÒª¼ÆËã½ÚµãµÄConnectionÁĞ±í£¬´Ó¶ø¼õÉÙ¼ÆËã¿ªÏú£¬ÓÅ»¯·ÂÕæĞ§ÂÊ
+     * ä¼˜åŒ–æ–¹æ³•ï¼Œç›´æ¥è¯»å–éœ€è¦è®¡ç®—èŠ‚ç‚¹çš„Connectionåˆ—è¡¨ï¼Œä»è€Œå‡å°‘è®¡ç®—å¼€é”€ï¼Œä¼˜åŒ–ä»¿çœŸæ•ˆç‡
      * @param allHosts
      */
     public HashMap<DTNHost, List<DTNHost>> optimizedTopologyCalculation(List<DTNHost> allHosts){
@@ -801,46 +801,46 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
         this.routerTable.clear();
         this.arrivalTime.clear();
 
-        /**È«ÍøµÄ´«ÊäËÙÂÊ¼Ù¶¨ÎªÒ»ÑùµÄ**/
+        /**å…¨ç½‘çš„ä¼ è¾“é€Ÿç‡å‡å®šä¸ºä¸€æ ·çš„**/
         double transmitSpeed = this.getHost().getInterface(1).getTransmitSpeed();
-        /**±íÊ¾Â·ÓÉ¿ªÊ¼µÄÊ±¼ä**/
+        /**è¡¨ç¤ºè·¯ç”±å¼€å§‹çš„æ—¶é—´**/
 
-        /**Ìí¼ÓÁ´Â·¿ÉÌ½²âµ½µÄÒ»ÌøÁÚ¾ÓÍø¸ñ£¬²¢¸üĞÂÂ·ÓÉ±í**/
+        /**æ·»åŠ é“¾è·¯å¯æ¢æµ‹åˆ°çš„ä¸€è·³é‚»å±…ç½‘æ ¼ï¼Œå¹¶æ›´æ–°è·¯ç”±è¡¨**/
         List<DTNHost> searchedSet = new ArrayList<DTNHost>();
         List<DTNHost> sourceSet = new ArrayList<DTNHost>();
-        sourceSet.add(this.getHost());//³õÊ¼Ê±Ö»ÓĞÔ´½ÚµãËù
-        searchedSet.add(this.getHost());//³õÊ¼Ê±Ö»ÓĞÔ´½Úµã
+        sourceSet.add(this.getHost());//åˆå§‹æ—¶åªæœ‰æºèŠ‚ç‚¹æ‰€
+        searchedSet.add(this.getHost());//åˆå§‹æ—¶åªæœ‰æºèŠ‚ç‚¹
 
-        for (Connection con : this.getHost().getConnections()) {//Ìí¼ÓÁ´Â·¿ÉÌ½²âµ½µÄÒ»ÌøÁÚ¾Ó£¬²¢¸üĞÂÂ·ÓÉ±í
+        for (Connection con : this.getHost().getConnections()) {//æ·»åŠ é“¾è·¯å¯æ¢æµ‹åˆ°çš„ä¸€è·³é‚»å±…ï¼Œå¹¶æ›´æ–°è·¯ç”±è¡¨
             if (!localHostsList.contains(con.getOtherNode(this.getHost())))
                 continue;
-            if (!isRightConnection(msg, con))//ÅĞ¶ÏÊÇ·ñÊÇÕıÈ·µÄÁ´Â·£¬Åä±¸¶à½Ó¿ÚºóĞèÒª½øĞĞ¼ì²é
+            if (!isRightConnection(msg, con))//åˆ¤æ–­æ˜¯å¦æ˜¯æ­£ç¡®çš„é“¾è·¯ï¼Œé…å¤‡å¤šæ¥å£åéœ€è¦è¿›è¡Œæ£€æŸ¥
             	continue;
             DTNHost neiHost = con.getOtherNode(this.getHost());
-            sourceSet.add(neiHost);//³õÊ¼Ê±Ö»ÓĞ±¾½ÚµãºÍÁ´Â·ÁÚ¾Ó
+            sourceSet.add(neiHost);//åˆå§‹æ—¶åªæœ‰æœ¬èŠ‚ç‚¹å’Œé“¾è·¯é‚»å±…
             Double time = getTime() + msg.getSize() / this.getHost().getInterface(1).getTransmitSpeed();
             List<Tuple<Integer, Boolean>> path = new ArrayList<Tuple<Integer, Boolean>>();
             Tuple<Integer, Boolean> hop = new Tuple<Integer, Boolean>(neiHost.getAddress(), false);
-            path.add(hop);//×¢ÒâË³Ğò
+            path.add(hop);//æ³¨æ„é¡ºåº
             arrivalTime.put(neiHost, time);
             routerTable.put(neiHost, path);
         }
-        /**Ìí¼ÓÁ´Â·¿ÉÌ½²âµ½µÄÒ»ÌøÁÚ¾ÓÍø¸ñ£¬²¢¸üĞÂÂ·ÓÉ±í**/
+        /**æ·»åŠ é“¾è·¯å¯æ¢æµ‹åˆ°çš„ä¸€è·³é‚»å±…ç½‘æ ¼ï¼Œå¹¶æ›´æ–°è·¯ç”±è¡¨**/
 
         int iteratorTimes = 0;
         int size = localHostsList.size();
         boolean updateLabel = true;
         boolean predictLable = false;
 
-        arrivalTime.put(this.getHost(), SimClock.getTime());//³õÊ¼»¯µ½´ïÊ±¼ä
+        arrivalTime.put(this.getHost(), SimClock.getTime());//åˆå§‹åŒ–åˆ°è¾¾æ—¶é—´
 
-        /**ÓÅÏÈ¼¶¶ÓÁĞ£¬×öÅÅĞòÓÃ**/
+        /**ä¼˜å…ˆçº§é˜Ÿåˆ—ï¼Œåšæ’åºç”¨**/
         List<Tuple<DTNHost, Double>> PriorityQueue = new ArrayList<Tuple<DTNHost, Double>>();
         //List<GridCell> GridCellListinPriorityQueue = new ArrayList<GridCell>();
         //List<Double> correspondingTimeinQueue = new ArrayList<Double>();
-        /**ÓÅÏÈ¼¶¶ÓÁĞ£¬×öÅÅĞòÓÃ**/
+        /**ä¼˜å…ˆçº§é˜Ÿåˆ—ï¼Œåšæ’åºç”¨**/
 
-        while (true) {//DijsktraËã·¨Ë¼Ïë£¬Ã¿´ÎÀú±éÈ«¾Ö£¬ÕÒÊ±ÑÓ×îĞ¡µÄ¼ÓÈëÂ·ÓÉ±í£¬±£Ö¤Â·ÓÉ±íÖĞÓÀÔ¶ÊÇÊ±ÑÓ×îĞ¡µÄÂ·¾¶
+        while (true) {//Dijsktraç®—æ³•æ€æƒ³ï¼Œæ¯æ¬¡å†éå…¨å±€ï¼Œæ‰¾æ—¶å»¶æœ€å°çš„åŠ å…¥è·¯ç”±è¡¨ï¼Œä¿è¯è·¯ç”±è¡¨ä¸­æ°¸è¿œæ˜¯æ—¶å»¶æœ€å°çš„è·¯å¾„
             if (iteratorTimes >= size)//|| updateLabel == false)
                 break;
             updateLabel = false;
@@ -850,37 +850,37 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
                     continue;
                 List<DTNHost> neiList = topologyInfo.get(c);//get neighbor nodes from topology info
 
-                /**ÅĞ¶ÏÊÇ·ñÒÑ¾­ÊÇËÑË÷¹ıµÄÔ´Íø¸ñ¼¯ºÏÖĞµÄÍø¸ñ**/
+                /**åˆ¤æ–­æ˜¯å¦å·²ç»æ˜¯æœç´¢è¿‡çš„æºç½‘æ ¼é›†åˆä¸­çš„ç½‘æ ¼**/
                 if (searchedSet.contains(c) || neiList == null)
                     continue;
 
                 searchedSet.add(c);
-                for (DTNHost eachNeighborNetgrid : neiList) {//startTime.keySet()°üº¬ÁËËùÓĞµÄÁÚ¾Ó½Úµã£¬°üº¬Î´À´µÄÁÚ¾Ó½Úµã
-                    if (sourceSet.contains(eachNeighborNetgrid))//È·±£²»»ØÍ·
+                for (DTNHost eachNeighborNetgrid : neiList) {//startTime.keySet()åŒ…å«äº†æ‰€æœ‰çš„é‚»å±…èŠ‚ç‚¹ï¼ŒåŒ…å«æœªæ¥çš„é‚»å±…èŠ‚ç‚¹
+                    if (sourceSet.contains(eachNeighborNetgrid))//ç¡®ä¿ä¸å›å¤´
                         continue;
 
                     double time = arrivalTime.get(c) + msg.getSize() / transmitSpeed;
-                    /**Ìí¼ÓÂ·¾¶ĞÅÏ¢**/
+                    /**æ·»åŠ è·¯å¾„ä¿¡æ¯**/
                     List<Tuple<Integer, Boolean>> path = new ArrayList<Tuple<Integer, Boolean>>();
                     if (this.routerTable.containsKey(c))
                         path.addAll(this.routerTable.get(c));
                     Tuple<Integer, Boolean> thisHop = new Tuple<Integer, Boolean>(eachNeighborNetgrid.getAddress(), predictLable);
-                    path.add(thisHop);//×¢ÒâË³Ğò
-                    /**Ìí¼ÓÂ·¾¶ĞÅÏ¢**/
-                    /**Î¬»¤×îĞ¡´«ÊäÊ±¼äµÄ¶ÓÁĞ**/
+                    path.add(thisHop);//æ³¨æ„é¡ºåº
+                    /**æ·»åŠ è·¯å¾„ä¿¡æ¯**/
+                    /**ç»´æŠ¤æœ€å°ä¼ è¾“æ—¶é—´çš„é˜Ÿåˆ—**/
                     if (arrivalTime.containsKey(eachNeighborNetgrid)) {
-                        /**¼ì²é¶ÓÁĞÖĞÊÇ·ñÒÑÓĞÍ¨¹ı´ËÍø¸ñµÄÂ·¾¶£¬Èç¹ûÓĞ£¬¿´ÄÄ¸öÊ±¼ä¸ü¶Ì**/
+                        /**æ£€æŸ¥é˜Ÿåˆ—ä¸­æ˜¯å¦å·²æœ‰é€šè¿‡æ­¤ç½‘æ ¼çš„è·¯å¾„ï¼Œå¦‚æœæœ‰ï¼Œçœ‹å“ªä¸ªæ—¶é—´æ›´çŸ­**/
                         if (time <= arrivalTime.get(eachNeighborNetgrid)) {
-                            if (random.nextBoolean() == true && time - arrivalTime.get(eachNeighborNetgrid) < 0.1) {//Èç¹ûÊ±¼äÏàµÈ£¬×öËæ»ú»¯Ñ¡Ôñ
+                            if (random.nextBoolean() == true && time - arrivalTime.get(eachNeighborNetgrid) < 0.1) {//å¦‚æœæ—¶é—´ç›¸ç­‰ï¼ŒåšéšæœºåŒ–é€‰æ‹©
 
-                                /**×¢Òâ£¬ÔÚ¶Ô¶ÓÁĞ½øĞĞµü´úµÄÊ±ºò£¬²»ÄÜ¹»ÔÚforÑ­»·ÀïÃæ¶Ô´Ë¶ÓÁĞ½øĞĞĞŞ¸Ä²Ù×÷£¬·ñÔò»á±¨´í**/
+                                /**æ³¨æ„ï¼Œåœ¨å¯¹é˜Ÿåˆ—è¿›è¡Œè¿­ä»£çš„æ—¶å€™ï¼Œä¸èƒ½å¤Ÿåœ¨forå¾ªç¯é‡Œé¢å¯¹æ­¤é˜Ÿåˆ—è¿›è¡Œä¿®æ”¹æ“ä½œï¼Œå¦åˆ™ä¼šæŠ¥é”™**/
                                 int index = -1;
                                 for (Tuple<DTNHost, Double> t : PriorityQueue) {
                                     if (t.getKey() == eachNeighborNetgrid) {
                                         index = PriorityQueue.indexOf(t);
                                     }
                                 }
-                                /**×¢Òâ£¬ÔÚÉÏÃæ¶ÔPriorityQueue¶ÓÁĞ½øĞĞµü´úµÄÊ±ºò£¬²»ÄÜ¹»ÔÚforÑ­»·ÀïÃæ¶Ô´Ë¶ÓÁĞ½øĞĞĞŞ¸Ä²Ù×÷£¬·ñÔò»á±¨´í**/
+                                /**æ³¨æ„ï¼Œåœ¨ä¸Šé¢å¯¹PriorityQueueé˜Ÿåˆ—è¿›è¡Œè¿­ä»£çš„æ—¶å€™ï¼Œä¸èƒ½å¤Ÿåœ¨forå¾ªç¯é‡Œé¢å¯¹æ­¤é˜Ÿåˆ—è¿›è¡Œä¿®æ”¹æ“ä½œï¼Œå¦åˆ™ä¼šæŠ¥é”™**/
                                 if (index > -1) {
                                     PriorityQueue.remove(index);
                                     PriorityQueue.add(new Tuple<DTNHost, Double>(eachNeighborNetgrid, time));
@@ -889,13 +889,13 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
                                 }
                             }
                         }
-                        /**¼ì²é¶ÓÁĞÖĞÊÇ·ñÒÑÓĞÍ¨¹ı´ËÍø¸ñµÄÂ·¾¶£¬Èç¹ûÓĞ£¬¿´ÄÄ¸öÊ±¼ä¸ü¶Ì**/
+                        /**æ£€æŸ¥é˜Ÿåˆ—ä¸­æ˜¯å¦å·²æœ‰é€šè¿‡æ­¤ç½‘æ ¼çš„è·¯å¾„ï¼Œå¦‚æœæœ‰ï¼Œçœ‹å“ªä¸ªæ—¶é—´æ›´çŸ­**/
                     } else {
                         PriorityQueue.add(new Tuple<DTNHost, Double>(eachNeighborNetgrid, time));
                         arrivalTime.put(eachNeighborNetgrid, time);
                         routerTable.put(eachNeighborNetgrid, path);
                     }
-                    /**¶Ô¶ÓÁĞ½øĞĞÅÅĞò**/
+                    /**å¯¹é˜Ÿåˆ—è¿›è¡Œæ’åº**/
                     sort(PriorityQueue);
                     updateLabel = true;
                 }
@@ -903,7 +903,7 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
             iteratorTimes++;
             for (int i = 0; i < PriorityQueue.size(); i++) {
                 if (!sourceSet.contains(PriorityQueue.get(i).getKey())) {
-                    sourceSet.add(PriorityQueue.get(i).getKey());//½«ĞÂµÄ×î¶ÌÍø¸ñ¼ÓÈë
+                    sourceSet.add(PriorityQueue.get(i).getKey());//å°†æ–°çš„æœ€çŸ­ç½‘æ ¼åŠ å…¥
                     break;
                 }
             }
@@ -926,46 +926,46 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
         this.routerTable.clear();
         this.arrivalTime.clear();
 
-        /**È«ÍøµÄ´«ÊäËÙÂÊ¼Ù¶¨ÎªÒ»ÑùµÄ**/
+        /**å…¨ç½‘çš„ä¼ è¾“é€Ÿç‡å‡å®šä¸ºä¸€æ ·çš„**/
         double transmitSpeed = this.getHost().getInterface(1).getTransmitSpeed();
-        /**±íÊ¾Â·ÓÉ¿ªÊ¼µÄÊ±¼ä**/
+        /**è¡¨ç¤ºè·¯ç”±å¼€å§‹çš„æ—¶é—´**/
 
-        /**Ìí¼ÓÁ´Â·¿ÉÌ½²âµ½µÄÒ»ÌøÁÚ¾ÓÍø¸ñ£¬²¢¸üĞÂÂ·ÓÉ±í**/
+        /**æ·»åŠ é“¾è·¯å¯æ¢æµ‹åˆ°çš„ä¸€è·³é‚»å±…ç½‘æ ¼ï¼Œå¹¶æ›´æ–°è·¯ç”±è¡¨**/
         List<DTNHost> searchedSet = new ArrayList<DTNHost>();
         List<DTNHost> sourceSet = new ArrayList<DTNHost>();
-        sourceSet.add(this.getHost());//³õÊ¼Ê±Ö»ÓĞÔ´½ÚµãËù
-        searchedSet.add(this.getHost());//³õÊ¼Ê±Ö»ÓĞÔ´½Úµã
+        sourceSet.add(this.getHost());//åˆå§‹æ—¶åªæœ‰æºèŠ‚ç‚¹æ‰€
+        searchedSet.add(this.getHost());//åˆå§‹æ—¶åªæœ‰æºèŠ‚ç‚¹
 
-        for (Connection con : this.getHost().getConnections()) {//Ìí¼ÓÁ´Â·¿ÉÌ½²âµ½µÄÒ»ÌøÁÚ¾Ó£¬²¢¸üĞÂÂ·ÓÉ±í
+        for (Connection con : this.getHost().getConnections()) {//æ·»åŠ é“¾è·¯å¯æ¢æµ‹åˆ°çš„ä¸€è·³é‚»å±…ï¼Œå¹¶æ›´æ–°è·¯ç”±è¡¨
             if (!localHostsList.contains(con.getOtherNode(this.getHost())))
                 continue;
-            if (!isRightConnection(msg, con))//ÅĞ¶ÏÊÇ·ñÊÇÕıÈ·µÄÁ´Â·£¬Åä±¸¶à½Ó¿ÚºóĞèÒª½øĞĞ¼ì²é
+            if (!isRightConnection(msg, con))//åˆ¤æ–­æ˜¯å¦æ˜¯æ­£ç¡®çš„é“¾è·¯ï¼Œé…å¤‡å¤šæ¥å£åéœ€è¦è¿›è¡Œæ£€æŸ¥
             	continue;
             DTNHost neiHost = con.getOtherNode(this.getHost());
-            sourceSet.add(neiHost);//³õÊ¼Ê±Ö»ÓĞ±¾½ÚµãºÍÁ´Â·ÁÚ¾Ó
+            sourceSet.add(neiHost);//åˆå§‹æ—¶åªæœ‰æœ¬èŠ‚ç‚¹å’Œé“¾è·¯é‚»å±…
             Double time = getTime() + msg.getSize() / this.getHost().getInterface(1).getTransmitSpeed();
             List<Tuple<Integer, Boolean>> path = new ArrayList<Tuple<Integer, Boolean>>();
             Tuple<Integer, Boolean> hop = new Tuple<Integer, Boolean>(neiHost.getAddress(), false);
-            path.add(hop);//×¢ÒâË³Ğò
+            path.add(hop);//æ³¨æ„é¡ºåº
             arrivalTime.put(neiHost, time);
             routerTable.put(neiHost, path);
         }
-        /**Ìí¼ÓÁ´Â·¿ÉÌ½²âµ½µÄÒ»ÌøÁÚ¾ÓÍø¸ñ£¬²¢¸üĞÂÂ·ÓÉ±í**/
+        /**æ·»åŠ é“¾è·¯å¯æ¢æµ‹åˆ°çš„ä¸€è·³é‚»å±…ç½‘æ ¼ï¼Œå¹¶æ›´æ–°è·¯ç”±è¡¨**/
 
         int iteratorTimes = 0;
         int size = localHostsList.size();
         boolean updateLabel = true;
         boolean predictLable = false;
 
-        arrivalTime.put(this.getHost(), SimClock.getTime());//³õÊ¼»¯µ½´ïÊ±¼ä
+        arrivalTime.put(this.getHost(), SimClock.getTime());//åˆå§‹åŒ–åˆ°è¾¾æ—¶é—´
 
-        /**ÓÅÏÈ¼¶¶ÓÁĞ£¬×öÅÅĞòÓÃ**/
+        /**ä¼˜å…ˆçº§é˜Ÿåˆ—ï¼Œåšæ’åºç”¨**/
         List<Tuple<DTNHost, Double>> PriorityQueue = new ArrayList<Tuple<DTNHost, Double>>();
         //List<GridCell> GridCellListinPriorityQueue = new ArrayList<GridCell>();
         //List<Double> correspondingTimeinQueue = new ArrayList<Double>();
-        /**ÓÅÏÈ¼¶¶ÓÁĞ£¬×öÅÅĞòÓÃ**/
+        /**ä¼˜å…ˆçº§é˜Ÿåˆ—ï¼Œåšæ’åºç”¨**/
 
-        while (true) {//DijsktraËã·¨Ë¼Ïë£¬Ã¿´ÎÀú±éÈ«¾Ö£¬ÕÒÊ±ÑÓ×îĞ¡µÄ¼ÓÈëÂ·ÓÉ±í£¬±£Ö¤Â·ÓÉ±íÖĞÓÀÔ¶ÊÇÊ±ÑÓ×îĞ¡µÄÂ·¾¶
+        while (true) {//Dijsktraç®—æ³•æ€æƒ³ï¼Œæ¯æ¬¡å†éå…¨å±€ï¼Œæ‰¾æ—¶å»¶æœ€å°çš„åŠ å…¥è·¯ç”±è¡¨ï¼Œä¿è¯è·¯ç”±è¡¨ä¸­æ°¸è¿œæ˜¯æ—¶å»¶æœ€å°çš„è·¯å¾„
             if (iteratorTimes >= size)//|| updateLabel == false)
                 break;
             updateLabel = false;
@@ -975,37 +975,37 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
                     continue;
                 List<DTNHost> neiList = topologyInfo.get(c);//get neighbor nodes from topology info
 
-                /**ÅĞ¶ÏÊÇ·ñÒÑ¾­ÊÇËÑË÷¹ıµÄÔ´Íø¸ñ¼¯ºÏÖĞµÄÍø¸ñ**/
+                /**åˆ¤æ–­æ˜¯å¦å·²ç»æ˜¯æœç´¢è¿‡çš„æºç½‘æ ¼é›†åˆä¸­çš„ç½‘æ ¼**/
                 if (searchedSet.contains(c) || neiList == null)
                     continue;
 
                 searchedSet.add(c);
-                for (DTNHost eachNeighborNetgrid : neiList) {//startTime.keySet()°üº¬ÁËËùÓĞµÄÁÚ¾Ó½Úµã£¬°üº¬Î´À´µÄÁÚ¾Ó½Úµã
-                    if (sourceSet.contains(eachNeighborNetgrid))//È·±£²»»ØÍ·
+                for (DTNHost eachNeighborNetgrid : neiList) {//startTime.keySet()åŒ…å«äº†æ‰€æœ‰çš„é‚»å±…èŠ‚ç‚¹ï¼ŒåŒ…å«æœªæ¥çš„é‚»å±…èŠ‚ç‚¹
+                    if (sourceSet.contains(eachNeighborNetgrid))//ç¡®ä¿ä¸å›å¤´
                         continue;
 
                     double time = arrivalTime.get(c) + msg.getSize() / transmitSpeed;
-                    /**Ìí¼ÓÂ·¾¶ĞÅÏ¢**/
+                    /**æ·»åŠ è·¯å¾„ä¿¡æ¯**/
                     List<Tuple<Integer, Boolean>> path = new ArrayList<Tuple<Integer, Boolean>>();
                     if (this.routerTable.containsKey(c))
                         path.addAll(this.routerTable.get(c));
                     Tuple<Integer, Boolean> thisHop = new Tuple<Integer, Boolean>(eachNeighborNetgrid.getAddress(), predictLable);
-                    path.add(thisHop);//×¢ÒâË³Ğò
-                    /**Ìí¼ÓÂ·¾¶ĞÅÏ¢**/
-                    /**Î¬»¤×îĞ¡´«ÊäÊ±¼äµÄ¶ÓÁĞ**/
+                    path.add(thisHop);//æ³¨æ„é¡ºåº
+                    /**æ·»åŠ è·¯å¾„ä¿¡æ¯**/
+                    /**ç»´æŠ¤æœ€å°ä¼ è¾“æ—¶é—´çš„é˜Ÿåˆ—**/
                     if (arrivalTime.containsKey(eachNeighborNetgrid)) {
-                        /**¼ì²é¶ÓÁĞÖĞÊÇ·ñÒÑÓĞÍ¨¹ı´ËÍø¸ñµÄÂ·¾¶£¬Èç¹ûÓĞ£¬¿´ÄÄ¸öÊ±¼ä¸ü¶Ì**/
+                        /**æ£€æŸ¥é˜Ÿåˆ—ä¸­æ˜¯å¦å·²æœ‰é€šè¿‡æ­¤ç½‘æ ¼çš„è·¯å¾„ï¼Œå¦‚æœæœ‰ï¼Œçœ‹å“ªä¸ªæ—¶é—´æ›´çŸ­**/
                         if (time <= arrivalTime.get(eachNeighborNetgrid)) {
-                            if (random.nextBoolean() == true && time - arrivalTime.get(eachNeighborNetgrid) < 0.1) {//Èç¹ûÊ±¼äÏàµÈ£¬×öËæ»ú»¯Ñ¡Ôñ
+                            if (random.nextBoolean() == true && time - arrivalTime.get(eachNeighborNetgrid) < 0.1) {//å¦‚æœæ—¶é—´ç›¸ç­‰ï¼ŒåšéšæœºåŒ–é€‰æ‹©
 
-                                /**×¢Òâ£¬ÔÚ¶Ô¶ÓÁĞ½øĞĞµü´úµÄÊ±ºò£¬²»ÄÜ¹»ÔÚforÑ­»·ÀïÃæ¶Ô´Ë¶ÓÁĞ½øĞĞĞŞ¸Ä²Ù×÷£¬·ñÔò»á±¨´í**/
+                                /**æ³¨æ„ï¼Œåœ¨å¯¹é˜Ÿåˆ—è¿›è¡Œè¿­ä»£çš„æ—¶å€™ï¼Œä¸èƒ½å¤Ÿåœ¨forå¾ªç¯é‡Œé¢å¯¹æ­¤é˜Ÿåˆ—è¿›è¡Œä¿®æ”¹æ“ä½œï¼Œå¦åˆ™ä¼šæŠ¥é”™**/
                                 int index = -1;
                                 for (Tuple<DTNHost, Double> t : PriorityQueue) {
                                     if (t.getKey() == eachNeighborNetgrid) {
                                         index = PriorityQueue.indexOf(t);
                                     }
                                 }
-                                /**×¢Òâ£¬ÔÚÉÏÃæ¶ÔPriorityQueue¶ÓÁĞ½øĞĞµü´úµÄÊ±ºò£¬²»ÄÜ¹»ÔÚforÑ­»·ÀïÃæ¶Ô´Ë¶ÓÁĞ½øĞĞĞŞ¸Ä²Ù×÷£¬·ñÔò»á±¨´í**/
+                                /**æ³¨æ„ï¼Œåœ¨ä¸Šé¢å¯¹PriorityQueueé˜Ÿåˆ—è¿›è¡Œè¿­ä»£çš„æ—¶å€™ï¼Œä¸èƒ½å¤Ÿåœ¨forå¾ªç¯é‡Œé¢å¯¹æ­¤é˜Ÿåˆ—è¿›è¡Œä¿®æ”¹æ“ä½œï¼Œå¦åˆ™ä¼šæŠ¥é”™**/
                                 if (index > -1) {
                                     PriorityQueue.remove(index);
                                     PriorityQueue.add(new Tuple<DTNHost, Double>(eachNeighborNetgrid, time));
@@ -1014,13 +1014,13 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
                                 }
                             }
                         }
-                        /**¼ì²é¶ÓÁĞÖĞÊÇ·ñÒÑÓĞÍ¨¹ı´ËÍø¸ñµÄÂ·¾¶£¬Èç¹ûÓĞ£¬¿´ÄÄ¸öÊ±¼ä¸ü¶Ì**/
+                        /**æ£€æŸ¥é˜Ÿåˆ—ä¸­æ˜¯å¦å·²æœ‰é€šè¿‡æ­¤ç½‘æ ¼çš„è·¯å¾„ï¼Œå¦‚æœæœ‰ï¼Œçœ‹å“ªä¸ªæ—¶é—´æ›´çŸ­**/
                     } else {
                         PriorityQueue.add(new Tuple<DTNHost, Double>(eachNeighborNetgrid, time));
                         arrivalTime.put(eachNeighborNetgrid, time);
                         routerTable.put(eachNeighborNetgrid, path);
                     }
-                    /**¶Ô¶ÓÁĞ½øĞĞÅÅĞò**/
+                    /**å¯¹é˜Ÿåˆ—è¿›è¡Œæ’åº**/
                     sort(PriorityQueue);
                     updateLabel = true;
                 }
@@ -1028,7 +1028,7 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
             iteratorTimes++;
             for (int i = 0; i < PriorityQueue.size(); i++) {
                 if (!sourceSet.contains(PriorityQueue.get(i).getKey())) {
-                    sourceSet.add(PriorityQueue.get(i).getKey());//½«ĞÂµÄ×î¶ÌÍø¸ñ¼ÓÈë
+                    sourceSet.add(PriorityQueue.get(i).getKey());//å°†æ–°çš„æœ€çŸ­ç½‘æ ¼åŠ å…¥
                     break;
                 }
             }
@@ -1051,46 +1051,46 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
         this.routerTable.clear();
         this.arrivalTime.clear();
         
-        /**È«ÍøµÄ´«ÊäËÙÂÊ¼Ù¶¨ÎªÒ»ÑùµÄ**/
+        /**å…¨ç½‘çš„ä¼ è¾“é€Ÿç‡å‡å®šä¸ºä¸€æ ·çš„**/
         double transmitSpeed = this.getHost().getInterface(1).getTransmitSpeed();
-        /**±íÊ¾Â·ÓÉ¿ªÊ¼µÄÊ±¼ä**/
+        /**è¡¨ç¤ºè·¯ç”±å¼€å§‹çš„æ—¶é—´**/
 
-        /**Ìí¼ÓÁ´Â·¿ÉÌ½²âµ½µÄÒ»ÌøÁÚ¾ÓÍø¸ñ£¬²¢¸üĞÂÂ·ÓÉ±í**/
+        /**æ·»åŠ é“¾è·¯å¯æ¢æµ‹åˆ°çš„ä¸€è·³é‚»å±…ç½‘æ ¼ï¼Œå¹¶æ›´æ–°è·¯ç”±è¡¨**/
         List<DTNHost> searchedSet = new ArrayList<DTNHost>();
         List<DTNHost> sourceSet = new ArrayList<DTNHost>();
-        sourceSet.add(this.getHost());//³õÊ¼Ê±Ö»ÓĞÔ´½ÚµãËù
-        searchedSet.add(this.getHost());//³õÊ¼Ê±Ö»ÓĞÔ´½Úµã
+        sourceSet.add(this.getHost());//åˆå§‹æ—¶åªæœ‰æºèŠ‚ç‚¹æ‰€
+        searchedSet.add(this.getHost());//åˆå§‹æ—¶åªæœ‰æºèŠ‚ç‚¹
 
-        for (Connection con : this.getHost().getConnections()) {//Ìí¼ÓÁ´Â·¿ÉÌ½²âµ½µÄÒ»ÌøÁÚ¾Ó£¬²¢¸üĞÂÂ·ÓÉ±í
+        for (Connection con : this.getHost().getConnections()) {//æ·»åŠ é“¾è·¯å¯æ¢æµ‹åˆ°çš„ä¸€è·³é‚»å±…ï¼Œå¹¶æ›´æ–°è·¯ç”±è¡¨
             if (!localHostsList.contains(con.getOtherNode(this.getHost())))
                 continue;
-            if (!isRightConnection(msg, con))//ÅĞ¶ÏÊÇ·ñÊÇÕıÈ·µÄÁ´Â·£¬Åä±¸¶à½Ó¿ÚºóĞèÒª½øĞĞ¼ì²é
+            if (!isRightConnection(msg, con))//åˆ¤æ–­æ˜¯å¦æ˜¯æ­£ç¡®çš„é“¾è·¯ï¼Œé…å¤‡å¤šæ¥å£åéœ€è¦è¿›è¡Œæ£€æŸ¥
             	continue;
             DTNHost neiHost = con.getOtherNode(this.getHost());
-            sourceSet.add(neiHost);//³õÊ¼Ê±Ö»ÓĞ±¾½ÚµãºÍÁ´Â·ÁÚ¾Ó
+            sourceSet.add(neiHost);//åˆå§‹æ—¶åªæœ‰æœ¬èŠ‚ç‚¹å’Œé“¾è·¯é‚»å±…
             Double time = getTime() + msg.getSize() / this.getHost().getInterface(1).getTransmitSpeed();
             List<Tuple<Integer, Boolean>> path = new ArrayList<Tuple<Integer, Boolean>>();
             Tuple<Integer, Boolean> hop = new Tuple<Integer, Boolean>(neiHost.getAddress(), false);
-            path.add(hop);//×¢ÒâË³Ğò
+            path.add(hop);//æ³¨æ„é¡ºåº
             arrivalTime.put(neiHost, time);
             routerTable.put(neiHost, path);
         }
-        /**Ìí¼ÓÁ´Â·¿ÉÌ½²âµ½µÄÒ»ÌøÁÚ¾ÓÍø¸ñ£¬²¢¸üĞÂÂ·ÓÉ±í**/
+        /**æ·»åŠ é“¾è·¯å¯æ¢æµ‹åˆ°çš„ä¸€è·³é‚»å±…ç½‘æ ¼ï¼Œå¹¶æ›´æ–°è·¯ç”±è¡¨**/
 
         int iteratorTimes = 0;
         int size = localHostsList.size();
         boolean updateLabel = true;
         boolean predictLable = false;
 
-        arrivalTime.put(this.getHost(), SimClock.getTime());//³õÊ¼»¯µ½´ïÊ±¼ä
+        arrivalTime.put(this.getHost(), SimClock.getTime());//åˆå§‹åŒ–åˆ°è¾¾æ—¶é—´
 
-        /**ÓÅÏÈ¼¶¶ÓÁĞ£¬×öÅÅĞòÓÃ**/
+        /**ä¼˜å…ˆçº§é˜Ÿåˆ—ï¼Œåšæ’åºç”¨**/
         List<Tuple<DTNHost, Double>> PriorityQueue = new ArrayList<Tuple<DTNHost, Double>>();
         //List<GridCell> GridCellListinPriorityQueue = new ArrayList<GridCell>();
         //List<Double> correspondingTimeinQueue = new ArrayList<Double>();
-        /**ÓÅÏÈ¼¶¶ÓÁĞ£¬×öÅÅĞòÓÃ**/
+        /**ä¼˜å…ˆçº§é˜Ÿåˆ—ï¼Œåšæ’åºç”¨**/
 
-        while (true) {//DijsktraËã·¨Ë¼Ïë£¬Ã¿´ÎÀú±éÈ«¾Ö£¬ÕÒÊ±ÑÓ×îĞ¡µÄ¼ÓÈëÂ·ÓÉ±í£¬±£Ö¤Â·ÓÉ±íÖĞÓÀÔ¶ÊÇÊ±ÑÓ×îĞ¡µÄÂ·¾¶
+        while (true) {//Dijsktraç®—æ³•æ€æƒ³ï¼Œæ¯æ¬¡å†éå…¨å±€ï¼Œæ‰¾æ—¶å»¶æœ€å°çš„åŠ å…¥è·¯ç”±è¡¨ï¼Œä¿è¯è·¯ç”±è¡¨ä¸­æ°¸è¿œæ˜¯æ—¶å»¶æœ€å°çš„è·¯å¾„
             if (iteratorTimes >= size)//|| updateLabel == false)
                 break;
             updateLabel = false;
@@ -1100,37 +1100,37 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
                     continue;
                 List<DTNHost> neiList = topologyInfo.get(c);//get neighbor nodes from topology info
 
-                /**ÅĞ¶ÏÊÇ·ñÒÑ¾­ÊÇËÑË÷¹ıµÄÔ´Íø¸ñ¼¯ºÏÖĞµÄÍø¸ñ**/
+                /**åˆ¤æ–­æ˜¯å¦å·²ç»æ˜¯æœç´¢è¿‡çš„æºç½‘æ ¼é›†åˆä¸­çš„ç½‘æ ¼**/
                 if (searchedSet.contains(c) || neiList == null)
                     continue;
 
                 searchedSet.add(c);
-                for (DTNHost eachNeighborNetgrid : neiList) {//startTime.keySet()°üº¬ÁËËùÓĞµÄÁÚ¾Ó½Úµã£¬°üº¬Î´À´µÄÁÚ¾Ó½Úµã
-                    if (sourceSet.contains(eachNeighborNetgrid))//È·±£²»»ØÍ·
+                for (DTNHost eachNeighborNetgrid : neiList) {//startTime.keySet()åŒ…å«äº†æ‰€æœ‰çš„é‚»å±…èŠ‚ç‚¹ï¼ŒåŒ…å«æœªæ¥çš„é‚»å±…èŠ‚ç‚¹
+                    if (sourceSet.contains(eachNeighborNetgrid))//ç¡®ä¿ä¸å›å¤´
                         continue;
 
                     double time = arrivalTime.get(c) + msg.getSize() / transmitSpeed;
-                    /**Ìí¼ÓÂ·¾¶ĞÅÏ¢**/
+                    /**æ·»åŠ è·¯å¾„ä¿¡æ¯**/
                     List<Tuple<Integer, Boolean>> path = new ArrayList<Tuple<Integer, Boolean>>();
                     if (this.routerTable.containsKey(c))
                         path.addAll(this.routerTable.get(c));
                     Tuple<Integer, Boolean> thisHop = new Tuple<Integer, Boolean>(eachNeighborNetgrid.getAddress(), predictLable);
-                    path.add(thisHop);//×¢ÒâË³Ğò
-                    /**Ìí¼ÓÂ·¾¶ĞÅÏ¢**/
-                    /**Î¬»¤×îĞ¡´«ÊäÊ±¼äµÄ¶ÓÁĞ**/
+                    path.add(thisHop);//æ³¨æ„é¡ºåº
+                    /**æ·»åŠ è·¯å¾„ä¿¡æ¯**/
+                    /**ç»´æŠ¤æœ€å°ä¼ è¾“æ—¶é—´çš„é˜Ÿåˆ—**/
                     if (arrivalTime.containsKey(eachNeighborNetgrid)) {
-                        /**¼ì²é¶ÓÁĞÖĞÊÇ·ñÒÑÓĞÍ¨¹ı´ËÍø¸ñµÄÂ·¾¶£¬Èç¹ûÓĞ£¬¿´ÄÄ¸öÊ±¼ä¸ü¶Ì**/
+                        /**æ£€æŸ¥é˜Ÿåˆ—ä¸­æ˜¯å¦å·²æœ‰é€šè¿‡æ­¤ç½‘æ ¼çš„è·¯å¾„ï¼Œå¦‚æœæœ‰ï¼Œçœ‹å“ªä¸ªæ—¶é—´æ›´çŸ­**/
                         if (time <= arrivalTime.get(eachNeighborNetgrid)) {
-                            if (random.nextBoolean() == true && time - arrivalTime.get(eachNeighborNetgrid) < 0.1) {//Èç¹ûÊ±¼äÏàµÈ£¬×öËæ»ú»¯Ñ¡Ôñ
+                            if (random.nextBoolean() == true && time - arrivalTime.get(eachNeighborNetgrid) < 0.1) {//å¦‚æœæ—¶é—´ç›¸ç­‰ï¼ŒåšéšæœºåŒ–é€‰æ‹©
 
-                                /**×¢Òâ£¬ÔÚ¶Ô¶ÓÁĞ½øĞĞµü´úµÄÊ±ºò£¬²»ÄÜ¹»ÔÚforÑ­»·ÀïÃæ¶Ô´Ë¶ÓÁĞ½øĞĞĞŞ¸Ä²Ù×÷£¬·ñÔò»á±¨´í**/
+                                /**æ³¨æ„ï¼Œåœ¨å¯¹é˜Ÿåˆ—è¿›è¡Œè¿­ä»£çš„æ—¶å€™ï¼Œä¸èƒ½å¤Ÿåœ¨forå¾ªç¯é‡Œé¢å¯¹æ­¤é˜Ÿåˆ—è¿›è¡Œä¿®æ”¹æ“ä½œï¼Œå¦åˆ™ä¼šæŠ¥é”™**/
                                 int index = -1;
                                 for (Tuple<DTNHost, Double> t : PriorityQueue) {
                                     if (t.getKey() == eachNeighborNetgrid) {
                                         index = PriorityQueue.indexOf(t);
                                     }
                                 }
-                                /**×¢Òâ£¬ÔÚÉÏÃæ¶ÔPriorityQueue¶ÓÁĞ½øĞĞµü´úµÄÊ±ºò£¬²»ÄÜ¹»ÔÚforÑ­»·ÀïÃæ¶Ô´Ë¶ÓÁĞ½øĞĞĞŞ¸Ä²Ù×÷£¬·ñÔò»á±¨´í**/
+                                /**æ³¨æ„ï¼Œåœ¨ä¸Šé¢å¯¹PriorityQueueé˜Ÿåˆ—è¿›è¡Œè¿­ä»£çš„æ—¶å€™ï¼Œä¸èƒ½å¤Ÿåœ¨forå¾ªç¯é‡Œé¢å¯¹æ­¤é˜Ÿåˆ—è¿›è¡Œä¿®æ”¹æ“ä½œï¼Œå¦åˆ™ä¼šæŠ¥é”™**/
                                 if (index > -1) {
                                     PriorityQueue.remove(index);
                                     PriorityQueue.add(new Tuple<DTNHost, Double>(eachNeighborNetgrid, time));
@@ -1139,13 +1139,13 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
                                 }
                             }
                         }
-                        /**¼ì²é¶ÓÁĞÖĞÊÇ·ñÒÑÓĞÍ¨¹ı´ËÍø¸ñµÄÂ·¾¶£¬Èç¹ûÓĞ£¬¿´ÄÄ¸öÊ±¼ä¸ü¶Ì**/
+                        /**æ£€æŸ¥é˜Ÿåˆ—ä¸­æ˜¯å¦å·²æœ‰é€šè¿‡æ­¤ç½‘æ ¼çš„è·¯å¾„ï¼Œå¦‚æœæœ‰ï¼Œçœ‹å“ªä¸ªæ—¶é—´æ›´çŸ­**/
                     } else {
                         PriorityQueue.add(new Tuple<DTNHost, Double>(eachNeighborNetgrid, time));
                         arrivalTime.put(eachNeighborNetgrid, time);
                         routerTable.put(eachNeighborNetgrid, path);
                     }
-                    /**¶Ô¶ÓÁĞ½øĞĞÅÅĞò**/
+                    /**å¯¹é˜Ÿåˆ—è¿›è¡Œæ’åº**/
                     sort(PriorityQueue);
                     updateLabel = true;
                 }
@@ -1153,7 +1153,7 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
             iteratorTimes++;
             for (int i = 0; i < PriorityQueue.size(); i++) {
                 if (!sourceSet.contains(PriorityQueue.get(i).getKey())) {
-                    sourceSet.add(PriorityQueue.get(i).getKey());//½«ĞÂµÄ×î¶ÌÍø¸ñ¼ÓÈë
+                    sourceSet.add(PriorityQueue.get(i).getKey());//å°†æ–°çš„æœ€çŸ­ç½‘æ ¼åŠ å…¥
                     break;
                 }
             }
@@ -1161,7 +1161,7 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
         routerTableUpdateLabel = true;
     }
     /**
-     * »ñÈ¡Ã¿¸öÎÀĞÇËùÊôµÄ¹ìµÀÆ½Ãæ±àºÅ
+     * è·å–æ¯ä¸ªå«æ˜Ÿæ‰€å±çš„è½¨é“å¹³é¢ç¼–å·
      * @param host
      */
     public int getLEOOrbitPlane(DTNHost host){
@@ -1193,28 +1193,28 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
      */
     public List<Tuple<Integer, Boolean>> findPathInSameLEOPlane(DTNHost srcLEO, DTNHost to){
         List<Tuple<Integer, Boolean>> path =
-                new ArrayList<Tuple<Integer, Boolean>>();//¼ÇÂ¼×îÖÕÂ·¾¶
+                new ArrayList<Tuple<Integer, Boolean>>();//è®°å½•æœ€ç»ˆè·¯å¾„
         
         DynamicMultiLayerSatelliteRouter srcRouter = (DynamicMultiLayerSatelliteRouter)srcLEO.getRouter();
         
-        //Èç¹ûÂ·¾¶Î»´ò¿ªÁË£¬¾ÍÖ±½ÓÕÒµ½Õû¸öÂ·¾¶£¬È»ºóĞ´Èë
+        //å¦‚æœè·¯å¾„ä½æ‰“å¼€äº†ï¼Œå°±ç›´æ¥æ‰¾åˆ°æ•´ä¸ªè·¯å¾„ï¼Œç„¶åå†™å…¥
         DTNHost nextHop = srcLEO;
     	for (int i = 0; i < srcRouter.getSatelliteLinkInfo().
-    			getLEOci().getAllHostsInSamePlane().size() ; i++){//·ÀÖ¹ÎŞ·¨Ìø³öµÄ´íÎó
+    			getLEOci().getAllHostsInSamePlane().size() ; i++){//é˜²æ­¢æ— æ³•è·³å‡ºçš„é”™è¯¯
     		nextHop = chooseOneNeighborHostToSendInSameLEOPlane(nextHop, to);
     		path.add(new Tuple<Integer, Boolean>(nextHop.getAddress(), false));
-    		//ÒÑ¾­µ½´ïÁËÄ¿µÄ½Úµã£¬ÔòÂ·¾¶ËÑË÷½áÊø
+    		//å·²ç»åˆ°è¾¾äº†ç›®çš„èŠ‚ç‚¹ï¼Œåˆ™è·¯å¾„æœç´¢ç»“æŸ
     		if (nextHop.getAddress() == to.getAddress()){
     			srcRouter.routerTable.put(to, path); 
     			break;
     		}       			
     	}
-    	System.out.println(this.getHost()+"  Í¬Ò»¸öÆ½ÃæÄÚµÄÂ·¾¶£º "+path);
+    	System.out.println(this.getHost()+"  åŒä¸€ä¸ªå¹³é¢å†…çš„è·¯å¾„ï¼š "+path);
         return path;
     }
  
     /**
-     * LEOĞÅÏ¢·¢ÍùÁÚ¾Ó¹ìµÀÆ½Ãæ
+     * LEOä¿¡æ¯å‘å¾€é‚»å±…è½¨é“å¹³é¢
      * @param to
      */
     public boolean msgFromLEOForwardToNeighborPlane(Message msg, DTNHost to){
@@ -1222,13 +1222,13 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     	int destinationSerialNumberOfPlane = to.getAddress()/LEO_NROF_S_EACHPLANE + 1;
     	System.out.println("forward to neighbor plane   "+destinationSerialNumberOfPlane);
     	List<DTNHost> allCommunicationNodes = new ArrayList<DTNHost>();
-    	//ÕÒ³öËùÓĞÄ¿µÄ½Úµã¹ìµÀÆ½ÃæÉÏµÄ¿ÉÒÔÖ§³Ö¿çÆ½ÃæÍ¨ĞÅµÄÎÀĞÇ
+    	//æ‰¾å‡ºæ‰€æœ‰ç›®çš„èŠ‚ç‚¹è½¨é“å¹³é¢ä¸Šçš„å¯ä»¥æ”¯æŒè·¨å¹³é¢é€šä¿¡çš„å«æ˜Ÿ
     	for (DTNHost h : this.CommunicationNodesList.keySet()){
     		if (this.CommunicationNodesList.get(h) + 1 == destinationSerialNumberOfPlane)
     			allCommunicationNodes.add(h);
     	}
     	System.out.println("all communication nodes: "+allCommunicationNodes);
-    	//System.out.println("ÔÚÁÚ¾Ó¹ìµÀ! ÁÚ¾Ó¹ìµÀÉÏ¿ÉÍ¨ĞÅ½Úµã£º "+allCommunicationNodes+" connections: "+this.getConnections());
+    	//System.out.println("åœ¨é‚»å±…è½¨é“! é‚»å±…è½¨é“ä¸Šå¯é€šä¿¡èŠ‚ç‚¹ï¼š "+allCommunicationNodes+" connections: "+this.getConnections());
     	for (DTNHost h : allCommunicationNodes){
     		Connection con = this.findConnection(h.getAddress(), msg);
     		if (con != null){
@@ -1236,11 +1236,11 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
                         new ArrayList<Tuple<Integer, Boolean>>();
                 path.add(new Tuple<Integer, Boolean>(h.getAddress(), false));
                 routerTable.put(to, path);
-                System.out.println(this.getHost()+"  Í¬Ò»¸öÆ½ÃæÄÚµÄÂ·¾¶£º "+path);
+                System.out.println(this.getHost()+"  åŒä¸€ä¸ªå¹³é¢å†…çš„è·¯å¾„ï¼š "+path);
                 return true;
     		}
     	}   
-    	//Ã»ÓĞÓëÍ¨ĞÅÎÀĞÇÏàÓö
+    	//æ²¡æœ‰ä¸é€šä¿¡å«æ˜Ÿç›¸é‡
     	return false;
     }
     /**
@@ -1253,7 +1253,7 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     		return LEO;
     	int min = Integer.MAX_VALUE;
     	DTNHost minHost = null;
-    	//È¡³ö±¾¹ìµÀÆ½ÃæÄÚËùÓĞµÄÍ¨ĞÅ½Úµã
+    	//å–å‡ºæœ¬è½¨é“å¹³é¢å†…æ‰€æœ‰çš„é€šä¿¡èŠ‚ç‚¹
     	for (DTNHost cLEO : ((SatelliteMovement)LEO.getMovementModel()).
     			getSatelliteLinkInfo().getLEOci().getAllCommunicationNodes()){
     		int distance = Math.abs(cLEO.getAddress() - LEO.getAddress());
@@ -1271,7 +1271,7 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     	return minHost;
     }
     /**
-     * Ö´ĞĞ´ÓLEOĞÅÏ¢½»ÓÉMEO×ª·¢
+     * æ‰§è¡Œä»LEOä¿¡æ¯äº¤ç”±MEOè½¬å‘
      * @param to
      */
     public void msgFromCommunicationLEOForwardedByMEO(Message msg, DTNHost to){
@@ -1279,7 +1279,7 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     	
     	if (this.getHost().getRouter().CommunicationSatellitesLabel &&
     			LEOci.updateManageHosts(msg).isEmpty()){
-            System.out.println(this.getHost()+" Í¨ĞÅ½ÚµãLEO ¹ÂÁ¢£¡Ã»ÓĞMEOÁ¬½Ó£¡  "+msg);
+            System.out.println(this.getHost()+" é€šä¿¡èŠ‚ç‚¹LEO å­¤ç«‹ï¼æ²¡æœ‰MEOè¿æ¥ï¼  "+msg);
     		return;
     	}
     	   	
@@ -1289,51 +1289,51 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     		//return;
     	}
     	
-    	/**²ÉÓÃ×î¶ÌÂ·¾¶ËÑË÷Ëã·¨µÄ±äÖÖÀ´ÕÒ×îÓÅÂ·¾¶**/
-        //»ñÈ¡LEOÍ¨¹ıMEOÍøÂçµ½´ïÄ¿µÄLEOµÄÍØÆË
-        //¸ÄÔìµÄ×î¶ÌÂ·¾¶Ëã·¨£¬ÓÃÓÚÌØÊâ³¡¾°£¬ĞèÒªÖ¸¶¨³ö·¢Ô´½Úµã£¬²¢¸ø¶¨ÍøÂçÍØÆË
+    	/**é‡‡ç”¨æœ€çŸ­è·¯å¾„æœç´¢ç®—æ³•çš„å˜ç§æ¥æ‰¾æœ€ä¼˜è·¯å¾„**/
+        //è·å–LEOé€šè¿‡MEOç½‘ç»œåˆ°è¾¾ç›®çš„LEOçš„æ‹“æ‰‘
+        //æ”¹é€ çš„æœ€çŸ­è·¯å¾„ç®—æ³•ï¼Œç”¨äºç‰¹æ®Šåœºæ™¯ï¼Œéœ€è¦æŒ‡å®šå‡ºå‘æºèŠ‚ç‚¹ï¼Œå¹¶ç»™å®šç½‘ç»œæ‹“æ‰‘
     	
         //shortestPathSearch(msg, this.getHost(), getLEOtoLEOThroughMEOTopology(msg, this.getHost(), to));
         
-    	//ÕÒµ½ËùÓĞMEO½Úµã
+    	//æ‰¾åˆ°æ‰€æœ‰MEOèŠ‚ç‚¹
         List<DTNHost> hostsList = findMEOHosts();
         DTNHost nearestCLEOtoDestination = findNearestCommunicationLEONodes(to);
         hostsList.add(nearestCLEOtoDestination);
         hostsList.add(this.getHost());
-        /*Ò»¶¨ÊÇ´ÓÍ¨ĞÅ½Úµã·¢ËÍµ½MEO½øĞĞ×ª·¢*/
-        shortestPathSearch(msg, nearestCLEOtoDestination, hostsList);//ËÑË÷µÃµ½È¥ÍõÀëÄ¿µÄ½Úµã×î½üµÄÍ¨ĞÅ½ÚµãµÄÂ·¾¶
-    	/**²ÉÓÃ×î¶ÌÂ·¾¶ËÑË÷Ëã·¨µÄ±äÖÖÀ´ÕÒ×îÓÅÂ·¾¶**/
+        /*ä¸€å®šæ˜¯ä»é€šä¿¡èŠ‚ç‚¹å‘é€åˆ°MEOè¿›è¡Œè½¬å‘*/
+        shortestPathSearch(msg, nearestCLEOtoDestination, hostsList);//æœç´¢å¾—åˆ°å»ç‹ç¦»ç›®çš„èŠ‚ç‚¹æœ€è¿‘çš„é€šä¿¡èŠ‚ç‚¹çš„è·¯å¾„
+    	/**é‡‡ç”¨æœ€çŸ­è·¯å¾„æœç´¢ç®—æ³•çš„å˜ç§æ¥æ‰¾æœ€ä¼˜è·¯å¾„**/
         
         List<Tuple<Integer, Boolean>> lastPath = findPathInSameLEOPlane(nearestCLEOtoDestination, to);
     	
     	if (to.getRouter().CommunicationSatellitesLabel == false 
     			&& this.routerTable.containsKey(nearestCLEOtoDestination)){
-    		System.out.println(msg+ " ËÑË÷µ½Í¨¹ıMEO×ª·¢µÄ×î¶ÌÂ·¾¶£¡ to" + to);
+    		System.out.println(msg+ " æœç´¢åˆ°é€šè¿‡MEOè½¬å‘çš„æœ€çŸ­è·¯å¾„ï¼ to" + to);
     		List<Tuple<Integer, Boolean>> path = this.routerTable.get(nearestCLEOtoDestination);
     		path.addAll(lastPath);
-    		this.routerTable.put(to, path);//Ìí¼ÓÈ¥Ä¿µÄ½ÚµãµÄÂ·¾¶
+    		this.routerTable.put(to, path);//æ·»åŠ å»ç›®çš„èŠ‚ç‚¹çš„è·¯å¾„
     		return;
     	}   	    	
     }
     
     /**
-     * ÏÈµÃµ½ÆğÊ¼LEOµ½×î½üÍ¨ĞÅLEOµÄÂ·¾¶£¬ÔÙµÃµ½Í¨ĞÅLEOµ½MEOÒÔ¼°MEO²ãµÄÍØÆË£¬×îºóµÃµ½Ä¿µÄLEOµ½Æä×î½üÍ¨ĞÅLEOµÄÍØÆË£¬×éºÏÔÚÒ»Æğ
-     * Ã¿Ò»¸öMEO½ÚµãµÄÁÚ¾Ó·µ»Ø4¸ö½Úµã£¬Í¬Ò»¹ìµÀÄÚµÄÏàÁÚÁ½¸ö½Úµã£¬ÁÚ¾Ó¹ìµÀµÄÁ½¸ö×î½ü½Úµã£¬´Ó¶ø¼ÆËã³öÕûÌåµÄÍØÆË
-     * @param startMEO ÆğÊ¼µã
-     * @param endMEO   Ä¿µÄ½Úµã
+     * å…ˆå¾—åˆ°èµ·å§‹LEOåˆ°æœ€è¿‘é€šä¿¡LEOçš„è·¯å¾„ï¼Œå†å¾—åˆ°é€šä¿¡LEOåˆ°MEOä»¥åŠMEOå±‚çš„æ‹“æ‰‘ï¼Œæœ€åå¾—åˆ°ç›®çš„LEOåˆ°å…¶æœ€è¿‘é€šä¿¡LEOçš„æ‹“æ‰‘ï¼Œç»„åˆåœ¨ä¸€èµ·
+     * æ¯ä¸€ä¸ªMEOèŠ‚ç‚¹çš„é‚»å±…è¿”å›4ä¸ªèŠ‚ç‚¹ï¼ŒåŒä¸€è½¨é“å†…çš„ç›¸é‚»ä¸¤ä¸ªèŠ‚ç‚¹ï¼Œé‚»å±…è½¨é“çš„ä¸¤ä¸ªæœ€è¿‘èŠ‚ç‚¹ï¼Œä»è€Œè®¡ç®—å‡ºæ•´ä½“çš„æ‹“æ‰‘
+     * @param startMEO èµ·å§‹ç‚¹
+     * @param endMEO   ç›®çš„èŠ‚ç‚¹
      * @return
      */
     public HashMap<DTNHost, List<DTNHost>> getLEOtoLEOThroughMEOTopology(Message msg, DTNHost startLEO, DTNHost endLEO){
     	HashMap<DTNHost, List<DTNHost>> topologyInfo = new HashMap<DTNHost, List<DTNHost>>();
     	
-//    	//Èç¹ûÊÇ¶¯Ì¬·Ö´ØÂ·ÓÉ»áÖ´ĞĞ¸üĞÂ²Ù×÷£¬Èç¹ûÊÇ¾²Ì¬·Ö´ØÂ·ÓÉÔòÖ±½Ó·µ»ØÊÂÏÈ¹æ¶¨µÄMEO¹ÜÀí½Úµã
+//    	//å¦‚æœæ˜¯åŠ¨æ€åˆ†ç°‡è·¯ç”±ä¼šæ‰§è¡Œæ›´æ–°æ“ä½œï¼Œå¦‚æœæ˜¯é™æ€åˆ†ç°‡è·¯ç”±åˆ™ç›´æ¥è¿”å›äº‹å…ˆè§„å®šçš„MEOç®¡ç†èŠ‚ç‚¹
 //    	List<DTNHost> manageHosts = ((SatelliteMovement)endLEO.getMovementModel()).
 //    			getSatelliteLinkInfo().getLEOci().updateManageHosts(msg);
 //    	if (manageHosts.isEmpty())
-//    		return topologyInfo;//·µ»ØÎª¿Õ
+//    		return topologyInfo;//è¿”å›ä¸ºç©º
     	   	
     	topologyInfo = getMEOtoLEOTopology(msg, endLEO);
-    	/**ÕÒµ½startLEOµÄ×î½üÍ¨ĞÅ½Úµã£¬ÓÃÓÚÓëMEO½øĞĞÍ¨ĞÅ,²¢Ìí¼ÓÏàÓ¦µÄÍØÆË**/ 	
+    	/**æ‰¾åˆ°startLEOçš„æœ€è¿‘é€šä¿¡èŠ‚ç‚¹ï¼Œç”¨äºä¸MEOè¿›è¡Œé€šä¿¡,å¹¶æ·»åŠ ç›¸åº”çš„æ‹“æ‰‘**/ 	
     	topologyInfo.putAll(getLEOtoNearestCommunicationLEOTopology(startLEO));
     	
 //    	for (DTNHost MEO : manageHosts){
@@ -1348,10 +1348,10 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     	return topologyInfo;
     }   
     /**
-     * Ã¿Ò»¸öGEOºÍMEO½ÚµãµÄÁÚ¾Ó·µ»Ø4¸ö½Úµã£¬Í¬Ò»¹ìµÀÄÚµÄÏàÁÚÁ½¸ö½Úµã£¬ÁÚ¾Ó¹ìµÀµÄÁ½¸ö×î½ü½Úµã£¬
-     * ´Ó¶ø¼ÆËã³öÕûÌåµÄÍØÆË
-     * @param startMEO ÆğÊ¼µã
-     * @param endMEO   Ä¿µÄ½Úµã
+     * æ¯ä¸€ä¸ªGEOå’ŒMEOèŠ‚ç‚¹çš„é‚»å±…è¿”å›4ä¸ªèŠ‚ç‚¹ï¼ŒåŒä¸€è½¨é“å†…çš„ç›¸é‚»ä¸¤ä¸ªèŠ‚ç‚¹ï¼Œé‚»å±…è½¨é“çš„ä¸¤ä¸ªæœ€è¿‘èŠ‚ç‚¹ï¼Œ
+     * ä»è€Œè®¡ç®—å‡ºæ•´ä½“çš„æ‹“æ‰‘
+     * @param startMEO èµ·å§‹ç‚¹
+     * @param endMEO   ç›®çš„èŠ‚ç‚¹
      * @return
      */
     public HashMap<DTNHost, List<DTNHost>> getGEOtoGEOTopology(DTNHost endGEO){
@@ -1360,9 +1360,9 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     	
     	for (DTNHost GEO : GEOci.getGEOList()){
     		List<DTNHost> neighborNodes = new ArrayList<DTNHost>();
-    		//Í¬Ò»¹ìµÀÄÚµÄÏàÁÚÁ½¸ö½Úµã
+    		//åŒä¸€è½¨é“å†…çš„ç›¸é‚»ä¸¤ä¸ªèŠ‚ç‚¹
     		neighborNodes.addAll(GEOci.getAllowConnectGEOHostsInSamePlane());
-    		//ÁÚ¾Ó¹ìµÀµÄÁ½¸ö×î½ü½Úµã
+    		//é‚»å±…è½¨é“çš„ä¸¤ä¸ªæœ€è¿‘èŠ‚ç‚¹
     		neighborNodes.addAll(GEOci.updateAllowConnectGEOHostsInNeighborPlane());  
     		topologyInfo.put(GEO, neighborNodes);
     	}
@@ -1370,10 +1370,10 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     	return topologyInfo;
     }
     /**
-     * Ã¿Ò»¸öGEOºÍMEO½ÚµãµÄÁÚ¾Ó·µ»Ø4¸ö½Úµã£¬Í¬Ò»¹ìµÀÄÚµÄÏàÁÚÁ½¸ö½Úµã£¬ÁÚ¾Ó¹ìµÀµÄÁ½¸ö×î½ü½Úµã£¬
-     * ´Ó¶ø¼ÆËã³öÕûÌåµÄÍØÆË
-     * @param startMEO ÆğÊ¼µã
-     * @param endMEO   Ä¿µÄ½Úµã
+     * æ¯ä¸€ä¸ªGEOå’ŒMEOèŠ‚ç‚¹çš„é‚»å±…è¿”å›4ä¸ªèŠ‚ç‚¹ï¼ŒåŒä¸€è½¨é“å†…çš„ç›¸é‚»ä¸¤ä¸ªèŠ‚ç‚¹ï¼Œé‚»å±…è½¨é“çš„ä¸¤ä¸ªæœ€è¿‘èŠ‚ç‚¹ï¼Œ
+     * ä»è€Œè®¡ç®—å‡ºæ•´ä½“çš„æ‹“æ‰‘
+     * @param startMEO èµ·å§‹ç‚¹
+     * @param endMEO   ç›®çš„èŠ‚ç‚¹
      * @return
      */
     public HashMap<DTNHost, List<DTNHost>> getMEOtoGEOTopology(DTNHost sMEO, DTNHost endGEO){
@@ -1381,25 +1381,25 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     	MEOclusterInfo sMEOci = ((SatelliteMovement)sMEO.getMovementModel()).getSatelliteLinkInfo().getMEOci();
     	
     	HashMap<DTNHost, List<DTNHost>> topologyInfo = new HashMap<DTNHost, List<DTNHost>>();
-    	//GEO²ãµÄ½ÚµãÍØÆË
+    	//GEOå±‚çš„èŠ‚ç‚¹æ‹“æ‰‘
     	for (DTNHost GEO : endGEOci.getGEOList()){
     		List<DTNHost> neighborNodes = new ArrayList<DTNHost>();
-    		//Í¬Ò»¹ìµÀÄÚµÄÏàÁÚÁ½¸ö½Úµã
+    		//åŒä¸€è½¨é“å†…çš„ç›¸é‚»ä¸¤ä¸ªèŠ‚ç‚¹
     		neighborNodes.addAll(endGEOci.getAllowConnectGEOHostsInSamePlane());
-    		//ÁÚ¾Ó¹ìµÀµÄÁ½¸ö×î½ü½Úµã
+    		//é‚»å±…è½¨é“çš„ä¸¤ä¸ªæœ€è¿‘èŠ‚ç‚¹
     		neighborNodes.addAll(endGEOci.updateAllowConnectGEOHostsInNeighborPlane());  
     		topologyInfo.put(GEO, neighborNodes);
     	}
-    	//MEO²ãµÄ½ÚµãÍØÆË
+    	//MEOå±‚çš„èŠ‚ç‚¹æ‹“æ‰‘
     	for (DTNHost MEO : sMEOci.getMEOList()){
     		List<DTNHost> neighborNodes = new ArrayList<DTNHost>();
-    		//Í¬Ò»¹ìµÀÄÚµÄÏàÁÚÁ½¸ö½Úµã
+    		//åŒä¸€è½¨é“å†…çš„ç›¸é‚»ä¸¤ä¸ªèŠ‚ç‚¹
     		neighborNodes.addAll(sMEOci.getAllowConnectMEOHostsInSamePlane());
-    		//ÁÚ¾Ó¹ìµÀµÄÁ½¸ö×î½ü½Úµã
+    		//é‚»å±…è½¨é“çš„ä¸¤ä¸ªæœ€è¿‘èŠ‚ç‚¹
     		neighborNodes.addAll(sMEOci.updateAllowConnectMEOHostsInNeighborPlane());  
     		topologyInfo.put(MEO, neighborNodes);
     	}
-    	//ÍØÆËÖĞÌí¼ÓGEOµ½Ä¿µÄMEOµÄÁ´Â·
+    	//æ‹“æ‰‘ä¸­æ·»åŠ GEOåˆ°ç›®çš„MEOçš„é“¾è·¯
     	for (DTNHost MEO : sMEOci.getMEOList()){
     		List<DTNHost> list = topologyInfo.get(MEO);  
         	MEOclusterInfo MI = ((SatelliteMovement)MEO.
@@ -1414,10 +1414,10 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     	return topologyInfo;
     }
     /**
-     * Ã¿Ò»¸öGEOºÍMEO½ÚµãµÄÁÚ¾Ó·µ»Ø4¸ö½Úµã£¬Í¬Ò»¹ìµÀÄÚµÄÏàÁÚÁ½¸ö½Úµã£¬ÁÚ¾Ó¹ìµÀµÄÁ½¸ö×î½ü½Úµã£¬
-     * ´Ó¶ø¼ÆËã³öÕûÌåµÄÍØÆË
-     * @param startMEO ÆğÊ¼µã
-     * @param endMEO   Ä¿µÄ½Úµã
+     * æ¯ä¸€ä¸ªGEOå’ŒMEOèŠ‚ç‚¹çš„é‚»å±…è¿”å›4ä¸ªèŠ‚ç‚¹ï¼ŒåŒä¸€è½¨é“å†…çš„ç›¸é‚»ä¸¤ä¸ªèŠ‚ç‚¹ï¼Œé‚»å±…è½¨é“çš„ä¸¤ä¸ªæœ€è¿‘èŠ‚ç‚¹ï¼Œ
+     * ä»è€Œè®¡ç®—å‡ºæ•´ä½“çš„æ‹“æ‰‘
+     * @param startMEO èµ·å§‹ç‚¹
+     * @param endMEO   ç›®çš„èŠ‚ç‚¹
      * @return
      */
     public HashMap<DTNHost, List<DTNHost>> getGEOtoMEOTopology(DTNHost sGEO, DTNHost endMEO){
@@ -1425,25 +1425,25 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     	MEOclusterInfo MEOci = ((SatelliteMovement)endMEO.getMovementModel()).getSatelliteLinkInfo().getMEOci();
     	
     	HashMap<DTNHost, List<DTNHost>> topologyInfo = new HashMap<DTNHost, List<DTNHost>>();
-    	//GEO²ãµÄ½ÚµãÍØÆË
+    	//GEOå±‚çš„èŠ‚ç‚¹æ‹“æ‰‘
     	for (DTNHost GEO : GEOci.getGEOList()){
     		List<DTNHost> neighborNodes = new ArrayList<DTNHost>();
-    		//Í¬Ò»¹ìµÀÄÚµÄÏàÁÚÁ½¸ö½Úµã
+    		//åŒä¸€è½¨é“å†…çš„ç›¸é‚»ä¸¤ä¸ªèŠ‚ç‚¹
     		neighborNodes.addAll(GEOci.getAllowConnectGEOHostsInSamePlane());
-    		//ÁÚ¾Ó¹ìµÀµÄÁ½¸ö×î½ü½Úµã
+    		//é‚»å±…è½¨é“çš„ä¸¤ä¸ªæœ€è¿‘èŠ‚ç‚¹
     		neighborNodes.addAll(GEOci.updateAllowConnectGEOHostsInNeighborPlane());  
     		topologyInfo.put(GEO, neighborNodes);
     	}
-    	//MEO²ãµÄ½ÚµãÍØÆË
+    	//MEOå±‚çš„èŠ‚ç‚¹æ‹“æ‰‘
     	for (DTNHost MEO : MEOci.getMEOList()){
     		List<DTNHost> neighborNodes = new ArrayList<DTNHost>();
-    		//Í¬Ò»¹ìµÀÄÚµÄÏàÁÚÁ½¸ö½Úµã
+    		//åŒä¸€è½¨é“å†…çš„ç›¸é‚»ä¸¤ä¸ªèŠ‚ç‚¹
     		neighborNodes.addAll(MEOci.getAllowConnectMEOHostsInSamePlane());
-    		//ÁÚ¾Ó¹ìµÀµÄÁ½¸ö×î½ü½Úµã
+    		//é‚»å±…è½¨é“çš„ä¸¤ä¸ªæœ€è¿‘èŠ‚ç‚¹
     		neighborNodes.addAll(MEOci.updateAllowConnectMEOHostsInNeighborPlane());  
     		topologyInfo.put(MEO, neighborNodes);
     	}
-    	//ÍØÆËÖĞÌí¼ÓGEOµ½Ä¿µÄMEOµÄÁ´Â·
+    	//æ‹“æ‰‘ä¸­æ·»åŠ GEOåˆ°ç›®çš„MEOçš„é“¾è·¯
     	for (DTNHost GEO : GEOci.getGEOList()){
     		List<DTNHost> list = topologyInfo.get(GEO);  
         	GEOclusterInfo GI = ((SatelliteMovement)GEO.
@@ -1458,10 +1458,10 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     	return topologyInfo;
     }
     /**
-     * Ã¿Ò»¸öGEO/MEO½ÚµãµÄÁÚ¾Ó·µ»Ø4¸ö½Úµã£¬Í¬Ò»¹ìµÀÄÚµÄÏàÁÚÁ½¸ö½Úµã£¬ÁÚ¾Ó¹ìµÀµÄÁ½¸ö×î½ü½Úµã£¬
-     * ´Ó¶ø¼ÆËã³öÕûÌåµÄÍØÆË
-     * @param startMEO ÆğÊ¼MEOµã
-     * @param endMEO   Ä¿µÄLEO½Úµã
+     * æ¯ä¸€ä¸ªGEO/MEOèŠ‚ç‚¹çš„é‚»å±…è¿”å›4ä¸ªèŠ‚ç‚¹ï¼ŒåŒä¸€è½¨é“å†…çš„ç›¸é‚»ä¸¤ä¸ªèŠ‚ç‚¹ï¼Œé‚»å±…è½¨é“çš„ä¸¤ä¸ªæœ€è¿‘èŠ‚ç‚¹ï¼Œ
+     * ä»è€Œè®¡ç®—å‡ºæ•´ä½“çš„æ‹“æ‰‘
+     * @param startMEO èµ·å§‹MEOç‚¹
+     * @param endMEO   ç›®çš„LEOèŠ‚ç‚¹
      * @return
      */
     public HashMap<DTNHost, List<DTNHost>> getGEOtoLEOTopology(Message msg, DTNHost sGEO, DTNHost endLEO){
@@ -1471,8 +1471,8 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     	LEOclusterInfo nearestCLEOci = ((SatelliteMovement)nearestCLEO.getMovementModel()).getSatelliteLinkInfo().getLEOci();
     	GEOclusterInfo sGEOci = ((SatelliteMovement)sGEO.getMovementModel()).getSatelliteLinkInfo().getGEOci();
 
-    	topologyInfo = getMEOtoMEOTopology(this.findMEOHosts());//Ê×ÏÈÌí¼ÓMEO²ãµÄËùÓĞÁ´Â·
-    	//ÍØÆËÖĞÌí¼Ó±¾GEOµ½ËùÓĞÏàÁ¬µÄMEOµÄÁ´Â·
+    	topologyInfo = getMEOtoMEOTopology(this.findMEOHosts());//é¦–å…ˆæ·»åŠ MEOå±‚çš„æ‰€æœ‰é“¾è·¯
+    	//æ‹“æ‰‘ä¸­æ·»åŠ æœ¬GEOåˆ°æ‰€æœ‰ç›¸è¿çš„MEOçš„é“¾è·¯
     	for (DTNHost MEO : sGEOci.updateGEOClusterMember()){
     		List<DTNHost> list = topologyInfo.get(MEO);  	
             if (list == null) {
@@ -1483,9 +1483,9 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
             }
     	}
     	
-    	topologyInfo.putAll(getGEOtoGEOTopology(sGEO));//Ìí¼ÓGEO²ãµÄÍØÆË
+    	topologyInfo.putAll(getGEOtoGEOTopology(sGEO));//æ·»åŠ GEOå±‚çš„æ‹“æ‰‘
     	
-    	//ÍØÆËÖĞÌí¼ÓMEOµ½Ä¿µÄLEOµÄÁ´Â·
+    	//æ‹“æ‰‘ä¸­æ·»åŠ MEOåˆ°ç›®çš„LEOçš„é“¾è·¯
     	for (DTNHost MEO : nearestCLEOci.updateManageHosts(msg)){
     		List<DTNHost> list = topologyInfo.get(MEO);  	
             if (list == null) {
@@ -1495,15 +1495,15 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
             	list.add(endLEO);
             }
     	}	
-    	//Ìí¼ÓLEOµ½MEOµÄÁ´Â·
+    	//æ·»åŠ LEOåˆ°MEOçš„é“¾è·¯
     	topologyInfo.put(nearestCLEO, nearestCLEOci.updateManageHosts(msg));
     	return topologyInfo;
     }
     /**
-     * Ã¿Ò»¸öMEO½ÚµãµÄÁÚ¾Ó·µ»Ø4¸ö½Úµã£¬Í¬Ò»¹ìµÀÄÚµÄÏàÁÚÁ½¸ö½Úµã£¬ÁÚ¾Ó¹ìµÀµÄÁ½¸ö×î½ü½Úµã£¬
-     * ´Ó¶ø¼ÆËã³öÕûÌåµÄÍØÆË
-     * @param startMEO ÆğÊ¼µã
-     * @param endMEO   Ä¿µÄ½Úµã
+     * æ¯ä¸€ä¸ªMEOèŠ‚ç‚¹çš„é‚»å±…è¿”å›4ä¸ªèŠ‚ç‚¹ï¼ŒåŒä¸€è½¨é“å†…çš„ç›¸é‚»ä¸¤ä¸ªèŠ‚ç‚¹ï¼Œé‚»å±…è½¨é“çš„ä¸¤ä¸ªæœ€è¿‘èŠ‚ç‚¹ï¼Œ
+     * ä»è€Œè®¡ç®—å‡ºæ•´ä½“çš„æ‹“æ‰‘
+     * @param startMEO èµ·å§‹ç‚¹
+     * @param endMEO   ç›®çš„èŠ‚ç‚¹
      * @return
      */
     public HashMap<DTNHost, List<DTNHost>> getMEOtoMEOTopology(List<DTNHost> MEOHosts){    	
@@ -1511,25 +1511,25 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     	for (DTNHost MEO : MEOHosts){
     		MEOclusterInfo MEOci = ((SatelliteMovement)MEO.getMovementModel()).getSatelliteLinkInfo().getMEOci();
     		List<DTNHost> neighborNodes = new ArrayList<DTNHost>();
-    		//Í¬Ò»¹ìµÀÄÚµÄÏàÁÚÁ½¸ö½Úµã
+    		//åŒä¸€è½¨é“å†…çš„ç›¸é‚»ä¸¤ä¸ªèŠ‚ç‚¹
     		neighborNodes.addAll(MEOci.getAllowConnectMEOHostsInSamePlane());
-    		//ÁÚ¾Ó¹ìµÀµÄÁ½¸ö×î½ü½Úµã
+    		//é‚»å±…è½¨é“çš„ä¸¤ä¸ªæœ€è¿‘èŠ‚ç‚¹
     		neighborNodes.addAll(MEOci.updateAllowConnectMEOHostsInNeighborPlane());  
     		topologyInfo.put(MEO, neighborNodes);
     	}
     	return topologyInfo;
     }
     /**
-     * Ã¿Ò»¸öMEO½ÚµãµÄÁÚ¾Ó·µ»Ø4¸ö½Úµã£¬Í¬Ò»¹ìµÀÄÚµÄÏàÁÚÁ½¸ö½Úµã£¬ÁÚ¾Ó¹ìµÀµÄÁ½¸ö×î½ü½Úµã£¬
-     * ´Ó¶ø¼ÆËã³öÕûÌåµÄÍØÆË
-     * @param startMEO ÆğÊ¼µã
-     * @param endMEO   Ä¿µÄ½Úµã
+     * æ¯ä¸€ä¸ªMEOèŠ‚ç‚¹çš„é‚»å±…è¿”å›4ä¸ªèŠ‚ç‚¹ï¼ŒåŒä¸€è½¨é“å†…çš„ç›¸é‚»ä¸¤ä¸ªèŠ‚ç‚¹ï¼Œé‚»å±…è½¨é“çš„ä¸¤ä¸ªæœ€è¿‘èŠ‚ç‚¹ï¼Œ
+     * ä»è€Œè®¡ç®—å‡ºæ•´ä½“çš„æ‹“æ‰‘
+     * @param startMEO èµ·å§‹ç‚¹
+     * @param endMEO   ç›®çš„èŠ‚ç‚¹
      * @return
      */
     public HashMap<DTNHost, List<DTNHost>> getMEOtoMEOTopology(){
     	if (MEO_TOTAL_SATELLITES <= 0)
     		return null;
-    	//ÏÈÕÒµ½Ò»¸öMEO½Úµã
+    	//å…ˆæ‰¾åˆ°ä¸€ä¸ªMEOèŠ‚ç‚¹
     	DTNHost sMEO = null;
     	for (DTNHost h : this.getHosts()){
     		if (h.getSatelliteType().contains("MEO"))
@@ -1538,41 +1538,41 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     	MEOclusterInfo sMEOci = ((SatelliteMovement)sMEO.getMovementModel()).getSatelliteLinkInfo().getMEOci();
     	
     	HashMap<DTNHost, List<DTNHost>> topologyInfo = new HashMap<DTNHost, List<DTNHost>>();
-    	//¶ÔÃ¿Ò»¸öMEO½Úµã£¬Ìí¼ÓÆäÏàÁÚÁ´Â·£¬´Ó¶ø¹¹³ÉMEO²ãµÄÍØÆË
+    	//å¯¹æ¯ä¸€ä¸ªMEOèŠ‚ç‚¹ï¼Œæ·»åŠ å…¶ç›¸é‚»é“¾è·¯ï¼Œä»è€Œæ„æˆMEOå±‚çš„æ‹“æ‰‘
     	for (DTNHost MEO : sMEOci.getMEOList()){
     		MEOclusterInfo MEOci = ((SatelliteMovement)MEO.getMovementModel()).getSatelliteLinkInfo().getMEOci();
     		List<DTNHost> neighborNodes = new ArrayList<DTNHost>();
-    		//Í¬Ò»¹ìµÀÄÚµÄÏàÁÚÁ½¸ö½Úµã
+    		//åŒä¸€è½¨é“å†…çš„ç›¸é‚»ä¸¤ä¸ªèŠ‚ç‚¹
     		neighborNodes.addAll(MEOci.getAllowConnectMEOHostsInSamePlane());
-    		//ÁÚ¾Ó¹ìµÀµÄÁ½¸ö×î½ü½Úµã
+    		//é‚»å±…è½¨é“çš„ä¸¤ä¸ªæœ€è¿‘èŠ‚ç‚¹
     		neighborNodes.addAll(MEOci.updateAllowConnectMEOHostsInNeighborPlane());  
     		topologyInfo.put(MEO, neighborNodes);
     	}
     	return topologyInfo;
     }
     /**
-     * »ñÈ¡±¾LEO½Úµãµ½×î½üµÄÍ¨ĞÅLEO½ÚµãµÄÍØÆË
+     * è·å–æœ¬LEOèŠ‚ç‚¹åˆ°æœ€è¿‘çš„é€šä¿¡LEOèŠ‚ç‚¹çš„æ‹“æ‰‘
      * @return
      */
     public HashMap<DTNHost, List<DTNHost>> getLEOtoNearestCommunicationLEOTopology(DTNHost src){
     	HashMap<DTNHost, List<DTNHost>> topologyInfo = new HashMap<DTNHost, List<DTNHost>>();
     	
     	DTNHost startCommunicationLEO = findNearestCommunicationLEONodes(src);  
-    	//Èç¹û×Ô¼º²»ÊÇÍ¨ĞÅ½Úµã£¬ÏÈÌí¼Óµ½Í¨ĞÅ½ÚµãµÄÂ·¾¶
+    	//å¦‚æœè‡ªå·±ä¸æ˜¯é€šä¿¡èŠ‚ç‚¹ï¼Œå…ˆæ·»åŠ åˆ°é€šä¿¡èŠ‚ç‚¹çš„è·¯å¾„
     	if (!(startCommunicationLEO.getAddress() == src.getAddress())){
     		List<Tuple<Integer, Boolean>> pathTocLEO = 
-    				findPathInSameLEOPlane(src, startCommunicationLEO);//ÕÒµ½Ç°ÍùÍ¬Ò»Æ½ÃæÉÏÍ¨ĞÅ½ÚµãµÄÂ·¾¶
+    				findPathInSameLEOPlane(src, startCommunicationLEO);//æ‰¾åˆ°å‰å¾€åŒä¸€å¹³é¢ä¸Šé€šä¿¡èŠ‚ç‚¹çš„è·¯å¾„
         	
         	int size = pathTocLEO.size();
         	DTNHost previousHop = src;
-        	//Ç°ĞĞÌí¼ÓÍØÆËÖĞµÄÁ´Â·
+        	//å‰è¡Œæ·»åŠ æ‹“æ‰‘ä¸­çš„é“¾è·¯
         	for (int index = 0; index < size; index++){       		
         		Tuple<Integer, Boolean> t = pathTocLEO.get(index);
         		List<DTNHost> links = new ArrayList<DTNHost>();
         		DTNHost thisHop = findHostByAddress(t.getKey());
-        		links.add(thisHop);//Ìí¼ÓÒ»ÌøµÄÁ´Â·
+        		links.add(thisHop);//æ·»åŠ ä¸€è·³çš„é“¾è·¯
         		if (!(index + 1 >= size))
-        			links.add(previousHop);//Èç¹ûÊÇÖĞ¼ä½Úµã£¬ĞèÒªÌí¼ÓË«ÏòÁ¬½ÓÁ´Â·
+        			links.add(previousHop);//å¦‚æœæ˜¯ä¸­é—´èŠ‚ç‚¹ï¼Œéœ€è¦æ·»åŠ åŒå‘è¿æ¥é“¾è·¯
         		topologyInfo.put(previousHop, links);
         		previousHop = thisHop;
         	}
@@ -1580,10 +1580,10 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     	return topologyInfo;
     }
     /**
-     * Ã¿Ò»¸öMEO½ÚµãµÄÁÚ¾Ó·µ»Ø4¸ö½Úµã£¬Í¬Ò»¹ìµÀÄÚµÄÏàÁÚÁ½¸ö½Úµã£¬ÁÚ¾Ó¹ìµÀµÄÁ½¸ö×î½ü½Úµã£¬
-     * ´Ó¶ø¼ÆËã³öÕûÌåµÄÍØÆË
-     * @param startMEO ÆğÊ¼MEOµã
-     * @param endMEO   Ä¿µÄLEO½Úµã
+     * æ¯ä¸€ä¸ªMEOèŠ‚ç‚¹çš„é‚»å±…è¿”å›4ä¸ªèŠ‚ç‚¹ï¼ŒåŒä¸€è½¨é“å†…çš„ç›¸é‚»ä¸¤ä¸ªèŠ‚ç‚¹ï¼Œé‚»å±…è½¨é“çš„ä¸¤ä¸ªæœ€è¿‘èŠ‚ç‚¹ï¼Œ
+     * ä»è€Œè®¡ç®—å‡ºæ•´ä½“çš„æ‹“æ‰‘
+     * @param startMEO èµ·å§‹MEOç‚¹
+     * @param endMEO   ç›®çš„LEOèŠ‚ç‚¹
      * @return
      */
     public HashMap<DTNHost, List<DTNHost>> getMEOtoLEOTopology(Message msg, DTNHost endLEO){
@@ -1592,10 +1592,10 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     	
     	topologyInfo = getMEOtoMEOTopology();
     
-    	//¿¼ÂÇµ½MEO½ÚµãÖ»ÄÜÓëÍ¨ĞÅLEO½ÚµãÖ®¼ä½øĞĞÍ¨ĞÅ
-    	topologyInfo.putAll(getLEOtoNearestCommunicationLEOTopology(endLEO));//ÕÒµ½Ä¿µÄLEOµ½Æä×î½üÍ¨ĞÅLEO½ÚµãÖ®¼äµÄÍØÆË£¬²¢½øĞĞÌí¼Ó
+    	//è€ƒè™‘åˆ°MEOèŠ‚ç‚¹åªèƒ½ä¸é€šä¿¡LEOèŠ‚ç‚¹ä¹‹é—´è¿›è¡Œé€šä¿¡
+    	topologyInfo.putAll(getLEOtoNearestCommunicationLEOTopology(endLEO));//æ‰¾åˆ°ç›®çš„LEOåˆ°å…¶æœ€è¿‘é€šä¿¡LEOèŠ‚ç‚¹ä¹‹é—´çš„æ‹“æ‰‘ï¼Œå¹¶è¿›è¡Œæ·»åŠ 
     	
-//    	//ÍØÆËÖĞÌí¼ÓMEOµ½Ä¿µÄLEOµÄÁ´Â·
+//    	//æ‹“æ‰‘ä¸­æ·»åŠ MEOåˆ°ç›®çš„LEOçš„é“¾è·¯
 //    	for (DTNHost MEO : endLEOci.updateManageHosts(msg)){
 //    		List<DTNHost> list = topologyInfo.get(MEO);  	
 //            if (list == null) {
@@ -1608,10 +1608,10 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     	return topologyInfo;
     }
     /**
-     * Ã¿Ò»¸öMEO½ÚµãµÄÁÚ¾Ó·µ»Ø4¸ö½Úµã£¬Í¬Ò»¹ìµÀÄÚµÄÏàÁÚÁ½¸ö½Úµã£¬ÁÚ¾Ó¹ìµÀµÄÁ½¸ö×î½ü½Úµã£¬
-     * ´Ó¶ø¼ÆËã³öÕûÌåµÄÍØÆË
-     * @param startMEO ÆğÊ¼MEOµã
-     * @param endMEO   Ä¿µÄLEO½Úµã
+     * æ¯ä¸€ä¸ªMEOèŠ‚ç‚¹çš„é‚»å±…è¿”å›4ä¸ªèŠ‚ç‚¹ï¼ŒåŒä¸€è½¨é“å†…çš„ç›¸é‚»ä¸¤ä¸ªèŠ‚ç‚¹ï¼Œé‚»å±…è½¨é“çš„ä¸¤ä¸ªæœ€è¿‘èŠ‚ç‚¹ï¼Œ
+     * ä»è€Œè®¡ç®—å‡ºæ•´ä½“çš„æ‹“æ‰‘
+     * @param startMEO èµ·å§‹MEOç‚¹
+     * @param endMEO   ç›®çš„LEOèŠ‚ç‚¹
      * @return
      */
     public HashMap<DTNHost, List<DTNHost>> getMEOtoCommunicationLEOTopology(Message msg, DTNHost endLEO){
@@ -1621,10 +1621,10 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     	
     	topologyInfo = getMEOtoMEOTopology();
     
-    	//»ñÈ¡Ä¿µÄÍ¨ĞÅLEO½ÚµãµÄ¹ÜÀíMEO½ÚµãÁĞ±í£¬¶¯Ì¬»òÕß¾²Ì¬
+    	//è·å–ç›®çš„é€šä¿¡LEOèŠ‚ç‚¹çš„ç®¡ç†MEOèŠ‚ç‚¹åˆ—è¡¨ï¼ŒåŠ¨æ€æˆ–è€…é™æ€
     	List<DTNHost> manageMEO = 
     			((SatelliteMovement)endLEO.getMovementModel()).getSatelliteLinkInfo().getLEOci().updateManageHosts(msg);
-    	//Ìí¼ÓMEOµ½Ä¿µÄÍ¨ĞÅLEO½ÚµãµÄÁ´Â·
+    	//æ·»åŠ MEOåˆ°ç›®çš„é€šä¿¡LEOèŠ‚ç‚¹çš„é“¾è·¯
     	topologyInfo.put(endLEO , manageMEO);
     	for (DTNHost MEO : manageMEO){
     		topologyInfo.get(MEO).add(endLEO);
@@ -1640,12 +1640,12 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     public List<Tuple<DTNHost, Double>> sort(List<Tuple<DTNHost, Double>> distanceList) {
         for (int j = 0; j < distanceList.size(); j++) {
             for (int i = 0; i < distanceList.size() - j - 1; i++) {
-                if (distanceList.get(i).getValue() > distanceList.get(i + 1).getValue()) {//´ÓĞ¡µ½´ó£¬´óµÄÖµ·ÅÔÚ¶ÓÁĞÓÒ²à
+                if (distanceList.get(i).getValue() > distanceList.get(i + 1).getValue()) {//ä»å°åˆ°å¤§ï¼Œå¤§çš„å€¼æ”¾åœ¨é˜Ÿåˆ—å³ä¾§
                     Tuple<DTNHost, Double> var1 = distanceList.get(i);
                     Tuple<DTNHost, Double> var2 = distanceList.get(i + 1);
                     distanceList.remove(i);
-                    distanceList.remove(i);//×¢Òâ£¬Ò»µ©Ö´ĞĞremoveÖ®ºó£¬Õû¸öListµÄ´óĞ¡¾Í±äÁË£¬ËùÒÔÔ­±¾i+1µÄÎ»ÖÃÏÖÔÚ±ä³ÉÁËi
-                    //×¢ÒâË³Ğò
+                    distanceList.remove(i);//æ³¨æ„ï¼Œä¸€æ—¦æ‰§è¡Œremoveä¹‹åï¼Œæ•´ä¸ªListçš„å¤§å°å°±å˜äº†ï¼Œæ‰€ä»¥åŸæœ¬i+1çš„ä½ç½®ç°åœ¨å˜æˆäº†i
+                    //æ³¨æ„é¡ºåº
                     distanceList.add(i, var2);
                     distanceList.add(i + 1, var1);
                 }
@@ -1662,7 +1662,7 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     public List<DTNHost> getHostListFromPath(List<Integer> path) {
         List<DTNHost> hostsOfPath = new ArrayList<DTNHost>();
         for (int i = 0; i < path.size(); i++) {
-            hostsOfPath.add(this.getHostFromAddress(path.get(i)));//¸ù¾İ½ÚµãµØÖ·ÕÒµ½DTNHost
+            hostsOfPath.add(this.getHostFromAddress(path.get(i)));//æ ¹æ®èŠ‚ç‚¹åœ°å€æ‰¾åˆ°DTNHost
         }
         return hostsOfPath;
     }
@@ -1715,7 +1715,7 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     	else
     		connectionType = "RadioLink";
     	
-//    	System.out.println("Ñ¡ÔñÊ¹ÓÃµÄÁ´Â·ÀàĞÍÎª£º" + connectionType);
+//    	System.out.println("é€‰æ‹©ä½¿ç”¨çš„é“¾è·¯ç±»å‹ä¸ºï¼š" + connectionType);
     	
         List<Connection> connections = this.getHost().getConnections();
         
@@ -1741,12 +1741,12 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
         Message m = t.getKey();
         Connection con = t.getValue();
         
-        System.out.println(m+"  "+SimClock.getTime()+"  µ±Ç°Ê¹ÓÃµÄÁ´Â·ÀàĞÍÎª£º" + con.getLinkType() + "Á´Â·´«ÊäËÙ¶ÈÎª£º" + con.getSpeed());
+        System.out.println(m+"  "+SimClock.getTime()+"  å½“å‰ä½¿ç”¨çš„é“¾è·¯ç±»å‹ä¸ºï¼š" + con.getLinkType() + "é“¾è·¯ä¼ è¾“é€Ÿåº¦ä¸ºï¼š" + con.getSpeed());
         
         int retVal = startTransfer(m, con);
         if (retVal == RCV_OK) {  //accepted a message, don't try others
             return m;
-        } else if (retVal > 0) { //ÏµÍ³¶¨Òå£¬Ö»ÓĞTRY_LATER_BUSY´óÓÚ0£¬¼´Îª1
+        } else if (retVal > 0) { //ç³»ç»Ÿå®šä¹‰ï¼Œåªæœ‰TRY_LATER_BUSYå¤§äº0ï¼Œå³ä¸º1
             return null;          // should try later -> don't bother trying others
         }
         return null;
@@ -1763,13 +1763,13 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
         Connection con = t.getValue();
         if (con == null)
             return false;
-        /**¼ì²éËù¾­¹ıÂ·¾¶µÄÇé¿ö£¬Èç¹ûÏÂÒ»ÌøµÄÁ´Â·ÒÑ¾­±»Õ¼ÓÃ£¬ÔòĞèÒªµÈ´ı**/
+        /**æ£€æŸ¥æ‰€ç»è¿‡è·¯å¾„çš„æƒ…å†µï¼Œå¦‚æœä¸‹ä¸€è·³çš„é“¾è·¯å·²ç»è¢«å ç”¨ï¼Œåˆ™éœ€è¦ç­‰å¾…**/
         if (con.isTransferring() || ((OptimizedClusteringRouter)
                 con.getOtherNode(this.getHost()).getRouter()).isTransferring()) {
-            return true;//ËµÃ÷Ä¿µÄ½ÚµãÕıÃ¦
+            return true;//è¯´æ˜ç›®çš„èŠ‚ç‚¹æ­£å¿™
         }
         return false;
-        /**ÖÁÓÚ¼ì²éËùÓĞµÄÁ´Â·Õ¼ÓÃÇé¿ö£¬¿´±¾½ÚµãÊÇ·ñÔÚ¶ÔÍâ·¢ËÍµÄÇé¿ö£¬ÔÚupdateº¯ÊıÖĞÒÑ¾­¼ì²é¹ıÁË£¬ÔÚ´ËÎŞĞèÖØ¸´¼ì²é**/
+        /**è‡³äºæ£€æŸ¥æ‰€æœ‰çš„é“¾è·¯å ç”¨æƒ…å†µï¼Œçœ‹æœ¬èŠ‚ç‚¹æ˜¯å¦åœ¨å¯¹å¤–å‘é€çš„æƒ…å†µï¼Œåœ¨updateå‡½æ•°ä¸­å·²ç»æ£€æŸ¥è¿‡äº†ï¼Œåœ¨æ­¤æ— éœ€é‡å¤æ£€æŸ¥**/
     }
 
     /**
@@ -1783,8 +1783,8 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
             //throw new SimError("send msg error!");
             return false;
         } else {
-            if (tryMessageToConnection(t) != null)//ÁĞ±íµÚÒ»¸öÔªËØ´Ó0Ö¸Õë¿ªÊ¼£¡£¡£¡
-                return true;//Ö»Òª³É¹¦´«Ò»´Î£¬¾ÍÌø³öÑ­»·
+            if (tryMessageToConnection(t) != null)//åˆ—è¡¨ç¬¬ä¸€ä¸ªå…ƒç´ ä»0æŒ‡é’ˆå¼€å§‹ï¼ï¼ï¼
+                return true;//åªè¦æˆåŠŸä¼ ä¸€æ¬¡ï¼Œå°±è·³å‡ºå¾ªç¯
             else
                 return false;
         }
@@ -1798,22 +1798,22 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
      */
     @Override
     public boolean isTransferring() {
-        //ÅĞ¶Ï¸Ã½ÚµãÄÜ·ñ½øĞĞ´«ÊäÏûÏ¢£¬´æÔÚÒÔÏÂÇé¿öÒ»ÖÖÒÔÉÏµÄ£¬Ö±½Ó·µ»Ø£¬²»¸üĞÂ,¼´ÏÖÔÚĞÅµÀÒÑ±»Õ¼ÓÃ£º
-        //ÇéĞÎ1£º±¾½ÚµãÕıÔÚÏòÍâ´«Êä
+        //åˆ¤æ–­è¯¥èŠ‚ç‚¹èƒ½å¦è¿›è¡Œä¼ è¾“æ¶ˆæ¯ï¼Œå­˜åœ¨ä»¥ä¸‹æƒ…å†µä¸€ç§ä»¥ä¸Šçš„ï¼Œç›´æ¥è¿”å›ï¼Œä¸æ›´æ–°,å³ç°åœ¨ä¿¡é“å·²è¢«å ç”¨ï¼š
+        //æƒ…å½¢1ï¼šæœ¬èŠ‚ç‚¹æ­£åœ¨å‘å¤–ä¼ è¾“
         if (this.sendingConnections.size() > 0) {//protected ArrayList<Connection> sendingConnections;
             return true; // sending something
         }
 
         List<Connection> connections = getConnections();
-        //ÇéĞÍ2£ºÃ»ÓĞÁÚ¾Ó½Úµã
+        //æƒ…å‹2ï¼šæ²¡æœ‰é‚»å±…èŠ‚ç‚¹
         if (connections.size() == 0) {
             return false; // not connected
         }
-        //ÇéĞÍ3£ºÓĞÁÚ¾Ó½Úµã£¬µ«×ÔÉíÓëÖÜÎ§½ÚµãÕıÔÚ´«Êä
-        //Ä£ÄâÁËÎŞÏß¹ã²¥Á´Â·£¬¼´ÁÚ¾Ó½ÚµãÖ®¼äÍ¬Ê±Ö»ÄÜÓĞÒ»¶Ô½Úµã´«ÊäÊı¾İ!
+        //æƒ…å‹3ï¼šæœ‰é‚»å±…èŠ‚ç‚¹ï¼Œä½†è‡ªèº«ä¸å‘¨å›´èŠ‚ç‚¹æ­£åœ¨ä¼ è¾“
+        //æ¨¡æ‹Ÿäº†æ— çº¿å¹¿æ’­é“¾è·¯ï¼Œå³é‚»å±…èŠ‚ç‚¹ä¹‹é—´åŒæ—¶åªèƒ½æœ‰ä¸€å¯¹èŠ‚ç‚¹ä¼ è¾“æ•°æ®!
         for (int i = 0, n = connections.size(); i < n; i++) {
             Connection con = connections.get(i);
-            //isReadyForTransfer·µ»ØfalseÔò±íÊ¾ÓĞĞÅµÀÔÚ±»Õ¼ÓÃ£¬Òò´Ë¶ÔÓÚ¹ã²¥ĞÅµÀ¶øÑÔ²»ÄÜ´«Êä
+            //isReadyForTransferè¿”å›falseåˆ™è¡¨ç¤ºæœ‰ä¿¡é“åœ¨è¢«å ç”¨ï¼Œå› æ­¤å¯¹äºå¹¿æ’­ä¿¡é“è€Œè¨€ä¸èƒ½ä¼ è¾“
             if (!con.isReadyForTransfer()) {
                 return true;    // a connection isn't ready for new transfer
             }
@@ -1822,7 +1822,7 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     }
 
 //    /**
-//     * ´ËÖØĞ´º¯Êı±£Ö¤ÔÚ´«ÊäÍê³ÉÖ®ºó£¬Ô´½ÚµãµÄĞÅÏ¢´Ómessages»º´æÖĞÉ¾³ı
+//     * æ­¤é‡å†™å‡½æ•°ä¿è¯åœ¨ä¼ è¾“å®Œæˆä¹‹åï¼ŒæºèŠ‚ç‚¹çš„ä¿¡æ¯ä»messagesç¼“å­˜ä¸­åˆ é™¤
 //     */
 //    @Override
 //    protected void transferDone(Connection con) {

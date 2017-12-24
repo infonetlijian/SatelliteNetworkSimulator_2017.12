@@ -118,6 +118,7 @@ public abstract class MessageRouter {
 	public String cacheEnable;
 	/** retransmission time of message */
 	private static final String RETRANS_TIME = "reTransTime";
+	private int reTranstime;
 	/** ------------------------------   对MessageRouter添加的变量       --------------------------------*/
 	
 	
@@ -140,6 +141,8 @@ public abstract class MessageRouter {
 		
 		Settings setting = new Settings(USERSETTINGNAME_S);		//读取设置，判断是否需要分簇
 		cacheEnable = setting.getSetting(EnableCache_s); // decide whether to enable the cache function
+	    Settings s = new Settings("Interface");
+	    reTranstime = s.getInt("reTransmitTime");
 	}
 
 	
@@ -331,12 +334,6 @@ public abstract class MessageRouter {
 					"buffer of " + this.host);
 		}
 		//用于测试的代码
-//		System.out.println("IB成功接收文件："+"  "+this.getHost()+"   "+incoming.getProperty(SelectLabel)+ "  "
-//				+incoming.getFilename()+" "+incoming.getChunkID()+"  "
-//					+incoming.getId()+" "+incoming.getFrom()+"  "+incoming.getTo()+"  "+"初始消息名称："+"  "+incoming.getInitMsgId()
-//					+" "+ incoming.getHops()
-//					+" "+"消息创建时间："+"  "+ incoming.getCreationTime()+"  "+"消息接收时间："+"  "+ incoming.getReceiveTime());
-		
 //		System.out.println("当前节点："+"  "+this.getHost()+"   "+"消息剩余重传次数："+incoming.getProperty(RETRANS_TIME)+ "  "
 //			+"消息ID："+"  "+incoming.getId()+" "+"源节点："+incoming.getFrom()+"  "+"目的节点："+incoming.getTo());
 		
@@ -359,10 +356,8 @@ public abstract class MessageRouter {
 		
 		/** put the message into the corresponding buffer*/
 		if (!isFinalRecipient && outgoing!=null) {			// 不是目的节点，应用层也不想丢掉这个消息
-			// when dtnHost receive the message, the retransmission time should be updated
-		    Settings s = new Settings("Interface");
-		    int time = s.getInt("reTransmitTime");
-		    aMessage.updateProperty(RETRANS_TIME, time);
+			// when dtnHost receive this message, the retransmission time should be updated
+		    aMessage.updateProperty(RETRANS_TIME, this.reTranstime);
 		    
 			addToMessages(aMessage, false);      
 			if(incoming.getProperty(SelectLabel)!=null){	// 是否使用缓存功能

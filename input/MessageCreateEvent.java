@@ -105,7 +105,7 @@ public class MessageCreateEvent extends MessageEvent {
 			
 			// set the retransmission time 
 		    Settings s = new Settings("Interface");
-		    int time = s.getInt("reTransmitTime");
+		    int time = s.getInt("reTransmitTime"); 
 			m.updateProperty(RETRANS_TIME, time);
 			
 			m.setResponseSize(this.responseSize);

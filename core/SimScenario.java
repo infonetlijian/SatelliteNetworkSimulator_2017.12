@@ -400,7 +400,6 @@ public class SimScenario implements Serializable {
             MessageRouter mRouterProto =
                     (MessageRouter) s.createIntializedObject(ROUTING_PACKAGE +
                             s.getSetting(ROUTER_S));
-
             // checks that these values are positive (throws Error if not)
             ensurePositiveValue(nrofHosts, NROF_HOSTS_S);
             ensurePositiveValue(nrofInterfaces, NROF_INTERF_S);
