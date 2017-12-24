@@ -5,14 +5,13 @@
 package routing;
 
 import java.util.*;
-
+import util.Tuple;
 import routing.SatelliteInterLinkInfo.GEOclusterInfo;
 import routing.SatelliteInterLinkInfo.LEOclusterInfo;
 import routing.SatelliteInterLinkInfo.MEOclusterInfo;
 import core.*;
 import movement.MovementModel;
 import movement.SatelliteMovement;
-import util.Tuple;
 import static core.SimClock.getTime;
 import static java.lang.Math.abs;
 
@@ -79,6 +78,9 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     /** the message size threshold, decides the message transmitted 
      *  through radio link or laser link -setting id ({@value}*/
     private static int msgThreshold;
+    /** the optimized label, if it turns on, all routing will use the 
+     * shortest path search, which is optimized but slow -setting id ({@value}*/
+    private static boolean OptimizedRouting;
     
     /** label indicates that the static routing parameters are set or not */
     private static boolean initLabel = false;
@@ -156,14 +158,16 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
             }
                         
             random = new Random();
-            Settings setting = new Settings(INTERFACENAME_S);
-            transmitRange = setting.getInt(TRANSMIT_RANGE_S);
-            msgThreshold = setting.getInt(MSG_SIZE_THRESHOLD_S);
+            s.setNameSpace(INTERFACENAME_S);
+            transmitRange = s.getInt(TRANSMIT_RANGE_S);
+            msgThreshold = s.getInt(MSG_SIZE_THRESHOLD_S);
             
-            setting.setNameSpace(GROUPNAME_S);
-            msgPathLabel = setting.getBoolean(MSG_PATHLABEL);
-            confirmTtl = setting.getInt(COMFIRMTTL_S);
-                        
+            s.setNameSpace(GROUPNAME_S);
+            msgPathLabel = s.getBoolean(MSG_PATHLABEL);
+            confirmTtl = s.getInt(COMFIRMTTL_S);
+                    
+            s.setNameSpace("DynamicMultiLayerSatelliteRouter");
+            OptimizedRouting = s.getBoolean("Optimized");
             initLabel = true;
         }
     }
@@ -191,14 +195,6 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
         //根据先验信息对LEO进行分组，并确定各个LEO的固定管理MEO节点，从而无需信令交互进行动态分簇
 //        if (!LEO_MEOClusteringInitLable)
 //            initLEO_MEOClusteringRelationship();
-
-//        //检测用
-//        for (DTNHost h : this.getHosts()){
-//        	if (h.getSatelliteType().contains("LEO"))
-//        		System.out.println(h+"  LEO  "+((OptimizedClusteringRouter)h.getRouter()).LEOci.getManageHosts());
-//           	if (h.getSatelliteType().contains("MEO"))
-//        		System.out.println(h+"  MEO  "+((OptimizedClusteringRouter)h.getRouter()).MEOci.getClusterList());
-//        }
         
         //update dynamic clustering information
         if (!clusteringUpdate()){
@@ -221,6 +217,8 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
 
         // try to send the message in the message buffer
         for (Message msg : messages) {
+        	if (checkMsgShouldGetRoutingOrNot(msg) == false)
+        		continue;
 //            //Confirm message's TTL only has 1 minutes, will be drop by itself
 //            if (msg.getId().contains("Confirm") || msg.getId().contains("ClusterInfo"))
 //                continue;
@@ -229,7 +227,20 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
         }
 
     }
-
+    /**
+     * check if msg is being sending or not
+     * @param msg
+     * @return
+     */
+    public boolean checkMsgShouldGetRoutingOrNot(Message msg){
+    	for (Connection con : this.sendingConnections){
+    		if (msg.getId().contains(con.getMessage().getId())){
+    			//throw new SimError("error" );
+    			return false;//this msg shouldn't be sended again
+    		}
+    	}
+    	return true;
+    }
     /** transform the message Collection to List
      * @param messages
      * @return
@@ -241,8 +252,6 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
         }
         return forMsg;
     }
-
-
 
     /**
      * Creates a new Confirm message to the router.
@@ -450,6 +459,252 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
         }
     }
     /**
+     * Core routing algorithm, utilizes greed approach to search the shortest path to the destination
+     *
+     * @param msg
+     */
+    public void LEOshortestPathSearch(Message msg) {
+    	LEOclusterInfo LEOci = this.getSatelliteLinkInfo().getLEOci();
+    	
+        DTNHost to = msg.getTo();// get destination
+        switch (to.getSatelliteType()){
+            case "LEO":{
+                if (OptimizedRouting){
+                	optimzedShortestPathSearch(msg, this.getHosts());
+                	return;
+                }
+                //目的节点是否在自身所属轨道平面上
+                if (LEOci.getAllHostsInSamePlane().contains(to)){                	
+                    findPathInSameLEOPlane(this.getHost(), to);
+                }
+                else{
+                	//对于发往不是同一轨道平面上的消息，统一先送往最近的通信节点
+                	if (this.getHost().getRouter().CommunicationSatellitesLabel){
+                        //检查目的节点是否在邻居轨道平面上
+                        List<DTNHost> hostsInNeighborOrbitPlane = LEOci.ifHostsInNeighborOrbitPlane(to);
+                        if (hostsInNeighborOrbitPlane != null){//不为空，则说明在邻居轨道上，且返回的是邻居轨道的所有节点
+                        	//先尝试通过邻居轨道通信节点转发
+                        	if(msgFromLEOForwardToNeighborPlane(msg, to))
+                        		return;
+                        }
+                        //否则，直接通过MEO管理节点转发
+                        msgFromCommunicationLEOForwardedByMEO(msg, to);
+                    	
+                	}
+                	//作为LEO遥感节点，直接先把数据传到通信节点上
+                	else{
+                    	DTNHost communicationLEO = findNearestCommunicationLEONodes(this.getHost());
+                    	List<Tuple<Integer, Boolean>> path = findPathInSameLEOPlane(this.getHost(), communicationLEO);
+                    	
+                        if (!path.isEmpty()){
+                        	System.out.println("先交给通信LEO节点进行转发   to" + to);
+                            routerTable.put(to, path);
+                        }
+                	}
+                }
+                break;
+            }
+            case "MEO":{
+                if (OptimizedRouting){
+                	optimzedShortestPathSearch(msg, this.getHosts());
+                	return;
+                }
+                
+            	if (this.getHost().getRouter().CommunicationSatellitesLabel){
+            		//如果自身是通信节点，则先发送到与自己相连接的MEO节点上
+            		//TODO
+                   	List<DTNHost> searchArea = new ArrayList<DTNHost>();                  	
+                   	searchArea.addAll(findMEOHosts());
+                   	searchArea.add(this.getHost());
+                   	//this.getMEOtoMEOTopology();
+                	optimzedShortestPathSearch(msg, searchArea);
+                	if (this.routerTable.get(to) != null)
+                		System.out.println(this.getHost()+" 找到了LEO to MEO 的路径"+msg);
+            	}
+            	//作为LEO遥感节点，直接先把数据传到通信节点上
+            	else{
+                	DTNHost communicationLEO = findNearestCommunicationLEONodes(this.getHost());
+                	List<Tuple<Integer, Boolean>> path = findPathInSameLEOPlane(this.getHost(), communicationLEO);
+                	
+                    if (!path.isEmpty()){
+                    	System.out.println("先交给通信LEO节点进行转发   to" + to);
+                        routerTable.put(to, path);
+                    }
+            	}                                          
+                break;
+            }
+            case "GEO":{
+            	//TODO
+                if (OptimizedRouting){
+                	optimzedShortestPathSearch(msg, this.getHosts());
+                	return;
+                }
+                if (to.getRouter().CommunicationSatellitesLabel){
+                    //TODO 构建LEO和GEO的拓扑
+                    HashMap<DTNHost, List<DTNHost>> topologyInfo = 
+                    		getGEOtoLEOTopology(msg, to, this.getHost());//optimizedTopologyCalculation(MEOci.MEOList);//localTopologyCalculation(MEOci.MEOList);          
+                    //调用搜索算法
+                    DTNHost nearestCLEO = findNearestCommunicationLEONodes(this.getHost());
+                    List<DTNHost> localHostsList = new ArrayList<DTNHost>();
+                    localHostsList.addAll(findGEOHosts());
+                    localHostsList.addAll(findMEOHosts());
+                    localHostsList.add(nearestCLEO);
+                	this.shortestPathSearch(msg, topologyInfo, localHostsList);
+                	if (this.routerTable.containsKey(to))
+                		System.out.println("LEO to GEO" + this.getHost() + "找到了最短路径");
+                	
+                }
+                //否则先交给通信节点
+                else{
+                	DTNHost communicationLEO = findNearestCommunicationLEONodes(this.getHost());
+                	List<Tuple<Integer, Boolean>> path = findPathInSameLEOPlane(this.getHost(), communicationLEO);
+                	
+                    if (!path.isEmpty()){
+                    	System.out.println("先交给通信LEO节点进行转发   to" + to);
+                        routerTable.put(to, path);
+                    }
+                }
+            	break;
+            }
+        }
+    }
+    /**
+     * Core routing logic for MEO satellite
+     * @param msg
+     */
+    public void MEOroutingPathSearch(Message msg) {
+    	MEOclusterInfo MEOci = this.getSatelliteLinkInfo().getMEOci();   	
+        DTNHost to = msg.getTo();// get destination
+        switch (to.getSatelliteType()){
+            case "LEO":{
+            	  if (OptimizedRouting){
+                  	optimzedShortestPathSearch(msg, this.getHosts());
+                  	return;
+            	  }
+                //目的节点是否是管理节点
+            	if (to.getRouter().CommunicationSatellitesLabel){
+            		//通过MEO节点直接传给LEO
+            		 HashMap<DTNHost, List<DTNHost>> topologyInfo = getMEOtoCommunicationLEOTopology(msg, to);//构建拓扑
+            		 //限定搜索的节点范围
+            		 List<DTNHost> localHostsList = new ArrayList<DTNHost>(findMEOHosts());
+            		 localHostsList.add(to);
+            		 shortestPathSearch(msg, topologyInfo, localHostsList);
+            	}
+            	else{
+            		DTNHost nearestCLEO = findNearestCommunicationLEONodes(to);
+	            	//先发给目的LEO最近的通信LEO节点上，再由它进行处理
+	           		HashMap<DTNHost, List<DTNHost>> topologyInfo = getMEOtoCommunicationLEOTopology(msg, nearestCLEO);//构建拓扑
+	           		//限定搜索的节点范围
+	           		List<DTNHost> localHostsList = new ArrayList<DTNHost>(findMEOHosts());
+	           		localHostsList.add(nearestCLEO);
+	           		shortestPathSearch(msg, topologyInfo, localHostsList);
+	           		
+	            	if (this.routerTable.containsKey(nearestCLEO)){
+	            		System.out.println("搜索到通过MEO转发的最短路径！ to" + to);
+	            		this.routerTable.put(to, this.routerTable.get(nearestCLEO));//添加去目的节点的路径
+	            		return;
+	            	}  
+            	}
+                break;
+            }
+            case "MEO":{
+            	List<DTNHost> allMEOandGEO = new ArrayList<DTNHost>();
+            	allMEOandGEO.addAll(findMEOHosts());
+            	allMEOandGEO.addAll(findGEOHosts());
+            	
+                if (OptimizedRouting){
+                	optimzedShortestPathSearch(msg, allMEOandGEO);
+                	return;
+                }
+                //改造的最短路径算法，用于特殊场景，需要指定出发源节点，并给定网络拓扑
+                HashMap<DTNHost, List<DTNHost>> topologyInfo = getMEOtoMEOTopology();//构建拓扑
+                //TODO 拓扑中应该添加GEO节点
+                //shortestPathSearch(msg, topologyInfo, allMEOandGEO);    
+                shortestPathSearch(msg, topologyInfo, findMEOHosts()); 
+                break;
+            }
+            case "GEO":{
+               	List<DTNHost> allMEOandGEO = new ArrayList<DTNHost>();
+            	allMEOandGEO.addAll(findMEOHosts());
+            	allMEOandGEO.addAll(findGEOHosts());
+                if (OptimizedRouting){
+                	optimzedShortestPathSearch(msg, allMEOandGEO);
+                	return;
+                }
+              //改造的最短路径算法，用于特殊场景，需要指定出发源节点，并给定网络拓扑
+                HashMap<DTNHost, List<DTNHost>> topologyInfo = getMEOtoMEOTopology();//构建拓扑
+                //TODO 构建MEO和GEO的拓扑
+                throw new SimError("MEO to GEO");
+                //shortestPathSearch(msg, topologyInfo, allMEOandGEO);  
+            }
+        }
+    }
+    /**
+     * Core routing logic for GEO satellite
+     * @param msg
+     */
+    public void GEOroutingPathSearch(Message msg) {
+        DTNHost to = msg.getTo();// get destination
+        switch (to.getSatelliteType()){
+            case "LEO":{
+                if (OptimizedRouting){
+                	optimzedShortestPathSearch(msg, this.getHosts());
+                	return;
+                }
+                
+                //找到管理此节点的MEO节点，交于它进行转发
+            	/**采用最短路径搜索算法的变种来找最优路径**/          
+                HashMap<DTNHost, List<DTNHost>> topologyInfo = 
+                		getGEOtoLEOTopology(msg, this.getHost(), to);//optimizedTopologyCalculation(MEOci.MEOList);//localTopologyCalculation(MEOci.MEOList);          
+                //调用搜索算法
+                DTNHost nearestCLEO = findNearestCommunicationLEONodes(to);
+                List<DTNHost> localHostsList = new ArrayList<DTNHost>();
+                localHostsList.addAll(findGEOHosts());
+                localHostsList.addAll(findMEOHosts());
+                localHostsList.add(nearestCLEO);
+            	this.shortestPathSearch(msg, topologyInfo, localHostsList);
+            	if (this.routerTable.containsKey(to))
+            		System.out.println("GEO" + this.getHost() + "找到了最短路径");
+            	
+            	if (!to.getRouter().CommunicationSatellitesLabel){
+	            	if (this.routerTable.containsKey(nearestCLEO)){
+	            		System.out.println("搜索到通过MEO转发的最短路径！ to" + to);
+	            		this.routerTable.put(to, this.routerTable.get(nearestCLEO));//添加去目的节点的路径
+	            		return;
+	            	}  
+            	}
+            	/**采用最短路径搜索算法的变种来找最优路径**/
+            	
+                break;
+            }
+            case "MEO":{
+                if (OptimizedRouting){
+                   	List<DTNHost> allMEOandGEO = new ArrayList<DTNHost>();
+                	allMEOandGEO.addAll(findMEOHosts());
+                	allMEOandGEO.addAll(findGEOHosts());
+                	optimzedShortestPathSearch(msg, allMEOandGEO);
+                	return;
+                }
+                //TODO
+                //shortestPathSearch(msg, this.getHost(), getGEOtoMEOTopology(this.getHost(), to));
+                //shortestPathSearch(msg, MEOci.getMEOList());
+                break;
+            }
+            case "GEO":{ 
+                if (OptimizedRouting){
+                   	List<DTNHost> allMEOandGEO = new ArrayList<DTNHost>();
+                	allMEOandGEO.addAll(findMEOHosts());
+                	allMEOandGEO.addAll(findGEOHosts());
+                	optimzedShortestPathSearch(msg, allMEOandGEO);
+                	return;
+                }
+                //TODO
+            	//shortestPathSearch(msg, this.getHost(), getGEOtoGEOTopology(to));
+            	break;
+            }
+        }
+    }
+    /**
      * 优化方法，直接读取需要计算节点的Connection列表，从而减少计算开销，优化仿真效率
      * @param allHosts
      */
@@ -470,6 +725,27 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
                         neighborList.add(otherNode);
                     }
         		}               
+        }
+        return topologyInfo;
+    }
+    /**
+     * Return current network topology in forms of current topology graph
+     */
+    public HashMap<DTNHost, List<DTNHost>> localTopologyGeneration(Message msg, List<DTNHost> allHosts) {
+        HashMap<DTNHost, List<DTNHost>> topologyInfo = new HashMap<DTNHost, List<DTNHost>>();
+
+        //get all 
+        //TODO better
+        for (DTNHost h : allHosts) {
+        	for (Connection con : h.getConnections()){
+        		if (!isRightConnection(msg, con))
+        			continue;
+        		DTNHost otherNode = con.getOtherNode(h);
+                if (topologyInfo.get(h) == null)
+                    topologyInfo.put(h, new ArrayList<DTNHost>());
+                List<DTNHost> neighborList = topologyInfo.get(h);
+                neighborList.add(otherNode);
+        	}
         }
         return topologyInfo;
     }
@@ -509,244 +785,15 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
         }
         return topologyInfo;
     }
-    /**
-     * 改造的最短路径算法，用于特殊场景，需要指定出发源节点，并给定网络拓扑
-     * @param msg
-     */
-    public void shortestPathSearch(Message msg, DTNHost source, HashMap<DTNHost, List<DTNHost>> topologyInfo) {
-        if (topologyInfo.isEmpty())
-            return;
-
-        if (routerTableUpdateLabel == true)
-            return;
-        this.routerTable.clear();
-        this.arrivalTime.clear();
-
-        /**全网的传输速率假定为一样的**/
-        double transmitSpeed = this.getHost().getInterface(1).getTransmitSpeed();
-        /**表示路由开始的时间**/
-
-        /**添加链路可探测到的一跳邻居网格，并更新路由表**/
-        List<DTNHost> searchedSet = new ArrayList<DTNHost>();
-        List<DTNHost> sourceSet = new ArrayList<DTNHost>();
-        sourceSet.add(source);//初始时只有源节点所
-        searchedSet.add(source);//初始时只有源节点
-
-        int iteratorTimes = 0;
-        int size = topologyInfo.keySet().size();
-        boolean updateLabel = true;
-        boolean predictLable = false;
-
-        arrivalTime.put(source, SimClock.getTime());//初始化到达时间
-
-        /**优先级队列，做排序用**/
-        List<Tuple<DTNHost, Double>> PriorityQueue = new ArrayList<Tuple<DTNHost, Double>>();
-        //List<GridCell> GridCellListinPriorityQueue = new ArrayList<GridCell>();
-        //List<Double> correspondingTimeinQueue = new ArrayList<Double>();
-        /**优先级队列，做排序用**/
-
-        while (true) {//Dijsktra算法思想，每次历遍全局，找时延最小的加入路由表，保证路由表中永远是时延最小的路径
-            if (iteratorTimes >= size)//|| updateLabel == false)
-                break;
-            updateLabel = false;
-
-            for (DTNHost c : sourceSet) {
-                if (!topologyInfo.keySet().contains(c)) // limit the search area in the local hosts list
-                    continue;
-                List<DTNHost> neiList = topologyInfo.get(c);//get neighbor nodes from topology info
-
-                /**判断是否已经是搜索过的源网格集合中的网格**/
-                if (searchedSet.contains(c) || neiList == null)
-                    continue;
-
-                searchedSet.add(c);
-                for (DTNHost eachNeighborNetgrid : neiList) {//startTime.keySet()包含了所有的邻居节点，包含未来的邻居节点
-                    if (sourceSet.contains(eachNeighborNetgrid))//确保不回头
-                        continue;
-
-                    double time = arrivalTime.get(c) + msg.getSize() / transmitSpeed;
-                    /**添加路径信息**/
-                    List<Tuple<Integer, Boolean>> path = new ArrayList<Tuple<Integer, Boolean>>();
-                    if (this.routerTable.containsKey(c))
-                        path.addAll(this.routerTable.get(c));
-                    Tuple<Integer, Boolean> thisHop = new Tuple<Integer, Boolean>(eachNeighborNetgrid.getAddress(), predictLable);
-                    path.add(thisHop);//注意顺序
-                    /**添加路径信息**/
-                    /**维护最小传输时间的队列**/
-                    if (arrivalTime.containsKey(eachNeighborNetgrid)) {
-                        /**检查队列中是否已有通过此网格的路径，如果有，看哪个时间更短**/
-                        if (time <= arrivalTime.get(eachNeighborNetgrid)) {
-                            if (random.nextBoolean() == true && time - arrivalTime.get(eachNeighborNetgrid) < 0.1) {//如果时间相等，做随机化选择
-
-                                /**注意，在对队列进行迭代的时候，不能够在for循环里面对此队列进行修改操作，否则会报错**/
-                                int index = -1;
-                                for (Tuple<DTNHost, Double> t : PriorityQueue) {
-                                    if (t.getKey() == eachNeighborNetgrid) {
-                                        index = PriorityQueue.indexOf(t);
-                                    }
-                                }
-                                /**注意，在上面对PriorityQueue队列进行迭代的时候，不能够在for循环里面对此队列进行修改操作，否则会报错**/
-                                if (index > -1) {
-                                    PriorityQueue.remove(index);
-                                    PriorityQueue.add(new Tuple<DTNHost, Double>(eachNeighborNetgrid, time));
-                                    arrivalTime.put(eachNeighborNetgrid, time);
-                                    routerTable.put(eachNeighborNetgrid, path);
-                                }
-                            }
-                        }
-                        /**检查队列中是否已有通过此网格的路径，如果有，看哪个时间更短**/
-                    } else {
-                        PriorityQueue.add(new Tuple<DTNHost, Double>(eachNeighborNetgrid, time));
-                        arrivalTime.put(eachNeighborNetgrid, time);
-                        routerTable.put(eachNeighborNetgrid, path);
-                    }
-                    /**对队列进行排序**/
-                    sort(PriorityQueue);
-                    updateLabel = true;
-                }
-            }
-            iteratorTimes++;
-            for (int i = 0; i < PriorityQueue.size(); i++) {
-                if (!sourceSet.contains(PriorityQueue.get(i).getKey())) {
-                    sourceSet.add(PriorityQueue.get(i).getKey());//将新的最短网格加入
-                    break;
-                }
-            }
-        }
-        routerTableUpdateLabel = true;
-    }
+ 
     /**
      * Core routing algorithm, utilizes greed approach to search the shortest path to the destination.
      * It will search the routing path in specific local nodes area.
      * @param msg
      */
-    public void MEOtoLEOshortestPathSearch(Message msg, HashMap<DTNHost, List<DTNHost>> topologyInfo) {
-        if (topologyInfo.isEmpty())
+    public void shortestPathSearch(Message msg, HashMap<DTNHost, List<DTNHost>> topologyInfo, List<DTNHost> localHostsList) {
+        if (localHostsList.isEmpty() || topologyInfo.isEmpty())
             return;
-
-        if (routerTableUpdateLabel == true)
-            return;
-        this.routerTable.clear();
-        this.arrivalTime.clear();
-
-        /**全网的传输速率假定为一样的**/
-        double transmitSpeed = this.getHost().getInterface(1).getTransmitSpeed();
-        /**表示路由开始的时间**/
-
-        /**添加链路可探测到的一跳邻居网格，并更新路由表**/
-        List<DTNHost> searchedSet = new ArrayList<DTNHost>();
-        List<DTNHost> sourceSet = new ArrayList<DTNHost>();
-        sourceSet.add(this.getHost());//初始时只有源节点所
-        searchedSet.add(this.getHost());//初始时只有源节点
-
-        for (Connection con : this.getHost().getConnections()) {//添加链路可探测到的一跳邻居，并更新路由表
-        	/**不是MEO的一跳节点全部忽略**/
-            if (!con.getOtherNode(this.getHost()).getSatelliteType().contains("MEO"))
-                continue;
-            DTNHost neiHost = con.getOtherNode(this.getHost());
-            sourceSet.add(neiHost);//初始时只有本节点和链路邻居
-            Double time = getTime() + msg.getSize() / this.getHost().getInterface(1).getTransmitSpeed();
-            List<Tuple<Integer, Boolean>> path = new ArrayList<Tuple<Integer, Boolean>>();
-            Tuple<Integer, Boolean> hop = new Tuple<Integer, Boolean>(neiHost.getAddress(), false);
-            path.add(hop);//注意顺序
-            arrivalTime.put(neiHost, time);
-            routerTable.put(neiHost, path);
-        }
-        /**添加链路可探测到的一跳邻居网格，并更新路由表**/
-
-        int iteratorTimes = 0;
-        int size = topologyInfo.keySet().size();
-        boolean updateLabel = true;
-        boolean predictLable = false;
-
-        arrivalTime.put(this.getHost(), SimClock.getTime());//初始化到达时间
-
-        /**优先级队列，做排序用**/
-        List<Tuple<DTNHost, Double>> PriorityQueue = new ArrayList<Tuple<DTNHost, Double>>();
-        //List<GridCell> GridCellListinPriorityQueue = new ArrayList<GridCell>();
-        //List<Double> correspondingTimeinQueue = new ArrayList<Double>();
-        /**优先级队列，做排序用**/
-
-        while (true) {//Dijsktra算法思想，每次历遍全局，找时延最小的加入路由表，保证路由表中永远是时延最小的路径
-            if (iteratorTimes >= size)//|| updateLabel == false)
-                break;
-            updateLabel = false;
-
-            for (DTNHost c : sourceSet) {
-                if (!topologyInfo.keySet().contains(c)) // limit the search area in the local hosts list
-                    continue;
-                List<DTNHost> neiList = topologyInfo.get(c);//get neighbor nodes from topology info
-
-                /**判断是否已经是搜索过的源网格集合中的网格**/
-                if (searchedSet.contains(c) || neiList == null)
-                    continue;
-
-                searchedSet.add(c);
-                for (DTNHost eachNeighborNetgrid : neiList) {//startTime.keySet()包含了所有的邻居节点，包含未来的邻居节点
-                    if (sourceSet.contains(eachNeighborNetgrid))//确保不回头
-                        continue;
-
-                    double time = arrivalTime.get(c) + msg.getSize() / transmitSpeed;
-                    /**添加路径信息**/
-                    List<Tuple<Integer, Boolean>> path = new ArrayList<Tuple<Integer, Boolean>>();
-                    if (this.routerTable.containsKey(c))
-                        path.addAll(this.routerTable.get(c));
-                    Tuple<Integer, Boolean> thisHop = new Tuple<Integer, Boolean>(eachNeighborNetgrid.getAddress(), predictLable);
-                    path.add(thisHop);//注意顺序
-                    /**添加路径信息**/
-                    /**维护最小传输时间的队列**/
-                    if (arrivalTime.containsKey(eachNeighborNetgrid)) {
-                        /**检查队列中是否已有通过此网格的路径，如果有，看哪个时间更短**/
-                        if (time <= arrivalTime.get(eachNeighborNetgrid)) {
-                            if (random.nextBoolean() == true && time - arrivalTime.get(eachNeighborNetgrid) < 0.1) {//如果时间相等，做随机化选择
-
-                                /**注意，在对队列进行迭代的时候，不能够在for循环里面对此队列进行修改操作，否则会报错**/
-                                int index = -1;
-                                for (Tuple<DTNHost, Double> t : PriorityQueue) {
-                                    if (t.getKey() == eachNeighborNetgrid) {
-                                        index = PriorityQueue.indexOf(t);
-                                    }
-                                }
-                                /**注意，在上面对PriorityQueue队列进行迭代的时候，不能够在for循环里面对此队列进行修改操作，否则会报错**/
-                                if (index > -1) {
-                                    PriorityQueue.remove(index);
-                                    PriorityQueue.add(new Tuple<DTNHost, Double>(eachNeighborNetgrid, time));
-                                    arrivalTime.put(eachNeighborNetgrid, time);
-                                    routerTable.put(eachNeighborNetgrid, path);
-                                }
-                            }
-                        }
-                        /**检查队列中是否已有通过此网格的路径，如果有，看哪个时间更短**/
-                    } else {
-                        PriorityQueue.add(new Tuple<DTNHost, Double>(eachNeighborNetgrid, time));
-                        arrivalTime.put(eachNeighborNetgrid, time);
-                        routerTable.put(eachNeighborNetgrid, path);
-                    }
-                    /**对队列进行排序**/
-                    sort(PriorityQueue);
-                    updateLabel = true;
-                }
-            }
-            iteratorTimes++;
-            for (int i = 0; i < PriorityQueue.size(); i++) {
-                if (!sourceSet.contains(PriorityQueue.get(i).getKey())) {
-                    sourceSet.add(PriorityQueue.get(i).getKey());//将新的最短网格加入
-                    break;
-                }
-            }
-        }
-        routerTableUpdateLabel = true;
-    }
-    /**
-     * Core routing algorithm, utilizes greed approach to search the shortest path to the destination.
-     * It will search the routing path in specific local nodes area.
-     * @param msg
-     */
-    public void shortestPathSearch(Message msg, List<DTNHost> localHostsList) {
-        if (localHostsList.isEmpty())
-            return;
-        //update the current topology information
-        HashMap<DTNHost, List<DTNHost>> topologyInfo = localTopologyCalculation(localHostsList);
 
         if (routerTableUpdateLabel == true)
             return;
@@ -766,6 +813,8 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
         for (Connection con : this.getHost().getConnections()) {//添加链路可探测到的一跳邻居，并更新路由表
             if (!localHostsList.contains(con.getOtherNode(this.getHost())))
                 continue;
+            if (!isRightConnection(msg, con))//判断是否是正确的链路，配备多接口后需要进行检查
+            	continue;
             DTNHost neiHost = con.getOtherNode(this.getHost());
             sourceSet.add(neiHost);//初始时只有本节点和链路邻居
             Double time = getTime() + msg.getSize() / this.getHost().getInterface(1).getTransmitSpeed();
@@ -860,71 +909,256 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
         }
         routerTableUpdateLabel = true;
     }
-
     /**
-     * 根据先验信息对LEO进行分组，并确定各个LEO的固定管理MEO节点，从而无需信令交互进行动态分簇
+     * Core routing algorithm, utilizes greed approach to search the shortest path to the destination.
+     * It will search the routing path in specific local nodes area.
+     * @param msg
      */
-//    public void initLEO_MEOClusteringRelationship(){
-//    	System.out.println("init clustering ralationship!");
-//        List<DTNHost> LEOList = new ArrayList<DTNHost>();
-//        List<DTNHost> MEOList = new ArrayList<DTNHost>();
-//        //找出所有LEO节点
-//        for (DTNHost h : this.getHosts()){
-//            if (h.getSatelliteType().contains("LEO"))
-//                LEOList.add(h);
-//        }
-//        //找出所有MEO节点
-//        for (DTNHost h : this.getHosts()){
-//            if (h.getSatelliteType().contains("MEO"))
-//                MEOList.add(h);
-//        }
-//        
-//        //对于每一个MEO节点进行初始化分簇节点的确定
-//        for (DTNHost mh : MEOList){
-//            List<Tuple<DTNHost, Double>> ConnectedLEO = new ArrayList<Tuple<DTNHost, Double>>();
-//            //先找出所有通信范围内的LEO节点
-//            for (DTNHost lh : LEOList){
-//                double distance = getDistance(mh, lh);
-//                if (distance <= this.transmitRange)
-//                    ConnectedLEO.add(new Tuple<DTNHost, Double>(lh, distance));
-//            }
-//            //排序，找出最近的节点
-//            List<Tuple<DTNHost, Double>> sortLEO = sort(ConnectedLEO);
-//            //从排序后的节点中记录最近的n个临近LEO轨道平面，作为受此MEO管理的分簇,这里n=4
-//            int upBound = 4;
-//            List<Integer> nearnestPlane = new ArrayList<Integer>();
-//            for (Tuple<DTNHost, Double> t : sortLEO) {
-//                boolean label = true;
-//                int num = this.getLEOOrbitPlane(t.getKey());//获取每个卫星所属的轨道平面编号
-//                             
-//                //如果一个LEO轨道平面被分配太多MEO管理节点，则需要跳过，从而保证每个LEO轨道平面都被分配到管理节点
-//                if(((OptimizedClusteringRouter)t.getKey().getRouter()).LEOci.getManageHosts().size() 
-//                		>= (this.MEO_TOTAL_PLANE*upBound)/this.LEO_TOTAL_PLANE)
-//                	continue;
-//                
-//                if (nearnestPlane.isEmpty()) {
-//                    nearnestPlane.add(num);
-//                    continue;
-//                }
-//                for (int i = 0; i < nearnestPlane.size(); i++) {//和已经存储的每个变量进行比较，一样就跳出
-//                    if (nearnestPlane.get(i) == num) {
-//                        label = false;
-//                        break;
-//                    }
-//                }
-//                if (label)
-//                    nearnestPlane.add(num);
-//                //找足了upBound个最近轨道平面，就跳出
-//                if (nearnestPlane.size() > upBound) {
-//                    ((OptimizedClusteringRouter)mh.getRouter()).MEOci.initClusterList(nearnestPlane);
-//                    break;
-//                }
-//            }
-//        }
-//        //完成后置初始化位，以免再次初始化
-//        LEO_MEOClusteringInitLable = true;
-//    }
+    public void optimzedShortestPathSearch(Message msg, List<DTNHost> localHostsList) {
+        if (localHostsList.isEmpty())
+            return;
+        //update the current topology information
+        HashMap<DTNHost, List<DTNHost>> topologyInfo = localTopologyGeneration(msg, localHostsList);
 
+        if (routerTableUpdateLabel == true)
+            return;
+        this.routerTable.clear();
+        this.arrivalTime.clear();
+
+        /**全网的传输速率假定为一样的**/
+        double transmitSpeed = this.getHost().getInterface(1).getTransmitSpeed();
+        /**表示路由开始的时间**/
+
+        /**添加链路可探测到的一跳邻居网格，并更新路由表**/
+        List<DTNHost> searchedSet = new ArrayList<DTNHost>();
+        List<DTNHost> sourceSet = new ArrayList<DTNHost>();
+        sourceSet.add(this.getHost());//初始时只有源节点所
+        searchedSet.add(this.getHost());//初始时只有源节点
+
+        for (Connection con : this.getHost().getConnections()) {//添加链路可探测到的一跳邻居，并更新路由表
+            if (!localHostsList.contains(con.getOtherNode(this.getHost())))
+                continue;
+            if (!isRightConnection(msg, con))//判断是否是正确的链路，配备多接口后需要进行检查
+            	continue;
+            DTNHost neiHost = con.getOtherNode(this.getHost());
+            sourceSet.add(neiHost);//初始时只有本节点和链路邻居
+            Double time = getTime() + msg.getSize() / this.getHost().getInterface(1).getTransmitSpeed();
+            List<Tuple<Integer, Boolean>> path = new ArrayList<Tuple<Integer, Boolean>>();
+            Tuple<Integer, Boolean> hop = new Tuple<Integer, Boolean>(neiHost.getAddress(), false);
+            path.add(hop);//注意顺序
+            arrivalTime.put(neiHost, time);
+            routerTable.put(neiHost, path);
+        }
+        /**添加链路可探测到的一跳邻居网格，并更新路由表**/
+
+        int iteratorTimes = 0;
+        int size = localHostsList.size();
+        boolean updateLabel = true;
+        boolean predictLable = false;
+
+        arrivalTime.put(this.getHost(), SimClock.getTime());//初始化到达时间
+
+        /**优先级队列，做排序用**/
+        List<Tuple<DTNHost, Double>> PriorityQueue = new ArrayList<Tuple<DTNHost, Double>>();
+        //List<GridCell> GridCellListinPriorityQueue = new ArrayList<GridCell>();
+        //List<Double> correspondingTimeinQueue = new ArrayList<Double>();
+        /**优先级队列，做排序用**/
+
+        while (true) {//Dijsktra算法思想，每次历遍全局，找时延最小的加入路由表，保证路由表中永远是时延最小的路径
+            if (iteratorTimes >= size)//|| updateLabel == false)
+                break;
+            updateLabel = false;
+
+            for (DTNHost c : sourceSet) {
+                if (!localHostsList.contains(c)) // limit the search area in the local hosts list
+                    continue;
+                List<DTNHost> neiList = topologyInfo.get(c);//get neighbor nodes from topology info
+
+                /**判断是否已经是搜索过的源网格集合中的网格**/
+                if (searchedSet.contains(c) || neiList == null)
+                    continue;
+
+                searchedSet.add(c);
+                for (DTNHost eachNeighborNetgrid : neiList) {//startTime.keySet()包含了所有的邻居节点，包含未来的邻居节点
+                    if (sourceSet.contains(eachNeighborNetgrid))//确保不回头
+                        continue;
+
+                    double time = arrivalTime.get(c) + msg.getSize() / transmitSpeed;
+                    /**添加路径信息**/
+                    List<Tuple<Integer, Boolean>> path = new ArrayList<Tuple<Integer, Boolean>>();
+                    if (this.routerTable.containsKey(c))
+                        path.addAll(this.routerTable.get(c));
+                    Tuple<Integer, Boolean> thisHop = new Tuple<Integer, Boolean>(eachNeighborNetgrid.getAddress(), predictLable);
+                    path.add(thisHop);//注意顺序
+                    /**添加路径信息**/
+                    /**维护最小传输时间的队列**/
+                    if (arrivalTime.containsKey(eachNeighborNetgrid)) {
+                        /**检查队列中是否已有通过此网格的路径，如果有，看哪个时间更短**/
+                        if (time <= arrivalTime.get(eachNeighborNetgrid)) {
+                            if (random.nextBoolean() == true && time - arrivalTime.get(eachNeighborNetgrid) < 0.1) {//如果时间相等，做随机化选择
+
+                                /**注意，在对队列进行迭代的时候，不能够在for循环里面对此队列进行修改操作，否则会报错**/
+                                int index = -1;
+                                for (Tuple<DTNHost, Double> t : PriorityQueue) {
+                                    if (t.getKey() == eachNeighborNetgrid) {
+                                        index = PriorityQueue.indexOf(t);
+                                    }
+                                }
+                                /**注意，在上面对PriorityQueue队列进行迭代的时候，不能够在for循环里面对此队列进行修改操作，否则会报错**/
+                                if (index > -1) {
+                                    PriorityQueue.remove(index);
+                                    PriorityQueue.add(new Tuple<DTNHost, Double>(eachNeighborNetgrid, time));
+                                    arrivalTime.put(eachNeighborNetgrid, time);
+                                    routerTable.put(eachNeighborNetgrid, path);
+                                }
+                            }
+                        }
+                        /**检查队列中是否已有通过此网格的路径，如果有，看哪个时间更短**/
+                    } else {
+                        PriorityQueue.add(new Tuple<DTNHost, Double>(eachNeighborNetgrid, time));
+                        arrivalTime.put(eachNeighborNetgrid, time);
+                        routerTable.put(eachNeighborNetgrid, path);
+                    }
+                    /**对队列进行排序**/
+                    sort(PriorityQueue);
+                    updateLabel = true;
+                }
+            }
+            iteratorTimes++;
+            for (int i = 0; i < PriorityQueue.size(); i++) {
+                if (!sourceSet.contains(PriorityQueue.get(i).getKey())) {
+                    sourceSet.add(PriorityQueue.get(i).getKey());//将新的最短网格加入
+                    break;
+                }
+            }
+        }
+        routerTableUpdateLabel = true;
+    }
+    /**
+     * Core routing algorithm, utilizes greed approach to search the shortest path to the destination.
+     * It will search the routing path in specific local nodes area.
+     * @param msg
+     */
+    public void shortestPathSearch(Message msg, DTNHost to, List<DTNHost> localHostsList) {
+        if (localHostsList.isEmpty())
+            return;
+        //update the current topology information
+        HashMap<DTNHost, List<DTNHost>> topologyInfo = localTopologyGeneration(msg, localHostsList);
+
+        if (routerTableUpdateLabel == true)
+            return;
+        this.routerTable.clear();
+        this.arrivalTime.clear();
+        
+        /**全网的传输速率假定为一样的**/
+        double transmitSpeed = this.getHost().getInterface(1).getTransmitSpeed();
+        /**表示路由开始的时间**/
+
+        /**添加链路可探测到的一跳邻居网格，并更新路由表**/
+        List<DTNHost> searchedSet = new ArrayList<DTNHost>();
+        List<DTNHost> sourceSet = new ArrayList<DTNHost>();
+        sourceSet.add(this.getHost());//初始时只有源节点所
+        searchedSet.add(this.getHost());//初始时只有源节点
+
+        for (Connection con : this.getHost().getConnections()) {//添加链路可探测到的一跳邻居，并更新路由表
+            if (!localHostsList.contains(con.getOtherNode(this.getHost())))
+                continue;
+            if (!isRightConnection(msg, con))//判断是否是正确的链路，配备多接口后需要进行检查
+            	continue;
+            DTNHost neiHost = con.getOtherNode(this.getHost());
+            sourceSet.add(neiHost);//初始时只有本节点和链路邻居
+            Double time = getTime() + msg.getSize() / this.getHost().getInterface(1).getTransmitSpeed();
+            List<Tuple<Integer, Boolean>> path = new ArrayList<Tuple<Integer, Boolean>>();
+            Tuple<Integer, Boolean> hop = new Tuple<Integer, Boolean>(neiHost.getAddress(), false);
+            path.add(hop);//注意顺序
+            arrivalTime.put(neiHost, time);
+            routerTable.put(neiHost, path);
+        }
+        /**添加链路可探测到的一跳邻居网格，并更新路由表**/
+
+        int iteratorTimes = 0;
+        int size = localHostsList.size();
+        boolean updateLabel = true;
+        boolean predictLable = false;
+
+        arrivalTime.put(this.getHost(), SimClock.getTime());//初始化到达时间
+
+        /**优先级队列，做排序用**/
+        List<Tuple<DTNHost, Double>> PriorityQueue = new ArrayList<Tuple<DTNHost, Double>>();
+        //List<GridCell> GridCellListinPriorityQueue = new ArrayList<GridCell>();
+        //List<Double> correspondingTimeinQueue = new ArrayList<Double>();
+        /**优先级队列，做排序用**/
+
+        while (true) {//Dijsktra算法思想，每次历遍全局，找时延最小的加入路由表，保证路由表中永远是时延最小的路径
+            if (iteratorTimes >= size)//|| updateLabel == false)
+                break;
+            updateLabel = false;
+
+            for (DTNHost c : sourceSet) {
+                if (!localHostsList.contains(c)) // limit the search area in the local hosts list
+                    continue;
+                List<DTNHost> neiList = topologyInfo.get(c);//get neighbor nodes from topology info
+
+                /**判断是否已经是搜索过的源网格集合中的网格**/
+                if (searchedSet.contains(c) || neiList == null)
+                    continue;
+
+                searchedSet.add(c);
+                for (DTNHost eachNeighborNetgrid : neiList) {//startTime.keySet()包含了所有的邻居节点，包含未来的邻居节点
+                    if (sourceSet.contains(eachNeighborNetgrid))//确保不回头
+                        continue;
+
+                    double time = arrivalTime.get(c) + msg.getSize() / transmitSpeed;
+                    /**添加路径信息**/
+                    List<Tuple<Integer, Boolean>> path = new ArrayList<Tuple<Integer, Boolean>>();
+                    if (this.routerTable.containsKey(c))
+                        path.addAll(this.routerTable.get(c));
+                    Tuple<Integer, Boolean> thisHop = new Tuple<Integer, Boolean>(eachNeighborNetgrid.getAddress(), predictLable);
+                    path.add(thisHop);//注意顺序
+                    /**添加路径信息**/
+                    /**维护最小传输时间的队列**/
+                    if (arrivalTime.containsKey(eachNeighborNetgrid)) {
+                        /**检查队列中是否已有通过此网格的路径，如果有，看哪个时间更短**/
+                        if (time <= arrivalTime.get(eachNeighborNetgrid)) {
+                            if (random.nextBoolean() == true && time - arrivalTime.get(eachNeighborNetgrid) < 0.1) {//如果时间相等，做随机化选择
+
+                                /**注意，在对队列进行迭代的时候，不能够在for循环里面对此队列进行修改操作，否则会报错**/
+                                int index = -1;
+                                for (Tuple<DTNHost, Double> t : PriorityQueue) {
+                                    if (t.getKey() == eachNeighborNetgrid) {
+                                        index = PriorityQueue.indexOf(t);
+                                    }
+                                }
+                                /**注意，在上面对PriorityQueue队列进行迭代的时候，不能够在for循环里面对此队列进行修改操作，否则会报错**/
+                                if (index > -1) {
+                                    PriorityQueue.remove(index);
+                                    PriorityQueue.add(new Tuple<DTNHost, Double>(eachNeighborNetgrid, time));
+                                    arrivalTime.put(eachNeighborNetgrid, time);
+                                    routerTable.put(eachNeighborNetgrid, path);
+                                }
+                            }
+                        }
+                        /**检查队列中是否已有通过此网格的路径，如果有，看哪个时间更短**/
+                    } else {
+                        PriorityQueue.add(new Tuple<DTNHost, Double>(eachNeighborNetgrid, time));
+                        arrivalTime.put(eachNeighborNetgrid, time);
+                        routerTable.put(eachNeighborNetgrid, path);
+                    }
+                    /**对队列进行排序**/
+                    sort(PriorityQueue);
+                    updateLabel = true;
+                }
+            }
+            iteratorTimes++;
+            for (int i = 0; i < PriorityQueue.size(); i++) {
+                if (!sourceSet.contains(PriorityQueue.get(i).getKey())) {
+                    sourceSet.add(PriorityQueue.get(i).getKey());//将新的最短网格加入
+                    break;
+                }
+            }
+        }
+        routerTableUpdateLabel = true;
+    }
     /**
      * 获取每个卫星所属的轨道平面编号
      * @param host
@@ -936,8 +1170,10 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
      * judge the shortest direction to forward message in the same orbit plane
      * @param to
      */
-    public void chooseOneNeighborHostToSendInSamePlane(Message msg, DTNHost to){
-    	LEOclusterInfo LEOci = this.getSatelliteLinkInfo().getLEOci();
+    public DTNHost chooseOneNeighborHostToSendInSameLEOPlane(DTNHost src, DTNHost to){
+    	DynamicMultiLayerSatelliteRouter srcRouter = (DynamicMultiLayerSatelliteRouter)src.getRouter();
+    	
+    	LEOclusterInfo LEOci = srcRouter.getSatelliteLinkInfo().getLEOci();
     	
         if (LEOci.getNeighborHostsInSamePlane().size() != 2)
             throw new SimError("LEOci.getNeighborHostsInSamePlane() error!");
@@ -948,84 +1184,34 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
             nextHop = b;
         else
             nextHop = a;
-
-        List<Tuple<Integer, Boolean>> path =
-                new ArrayList<Tuple<Integer, Boolean>>();
-        path.add(new Tuple<Integer, Boolean>(nextHop.getAddress(), false));
-        routerTable.put(to, path);
+        return nextHop;
     }
     /**
-     * Core routing algorithm, utilizes greed approach to search the shortest path to the destination
-     *
-     * @param msg
+     * find the path from this node to another LEO node in the same plane
+     * @param to
      */
-    public void LEOshortestPathSearch(Message msg) {
-    	LEOclusterInfo LEOci = this.getSatelliteLinkInfo().getLEOci();
-    	
-        DTNHost to = msg.getTo();// get destination
-        switch (to.getSatelliteType()){
-            case "LEO":{
-                //目的节点是否在自身所属轨道平面上
-            	//System.out.println(this.getHost()+" 同一轨道平面内节点 : "+LEOci.getAllHostsInSamePlane());
-                if (LEOci.getAllHostsInSamePlane().contains(to)){                	
-                    chooseOneNeighborHostToSendInSamePlane(msg, to);
-                }
-                else{
-                    //检查目的节点是否在邻居轨道平面上
-                    List<DTNHost> hostsInNeighborOrbitPlane = LEOci.ifHostsInNeighborOrbitPlane(to);
-                    if (hostsInNeighborOrbitPlane != null){//不为空，则说明在邻居轨道上，且返回的是邻居轨道的所有节点
-                    	//先尝试通过邻居轨道通信节点转发
-                    	if(!msgFromLEOForwardToNeighborPlane(msg, to))
-                    		msgFromLEOForwardedByMEO(msg, to);
-                    }
-                    //否则，直接通过MEO管理节点转发
-                    else{
-                    	msgFromLEOForwardedByMEO(msg, to);
-                    }
-                }
-                break;
-            }
-            case "MEO":{
-                Connection desConnection = null;
-                List<Connection> MEOConnectionList = new ArrayList<Connection>();
-                for (Connection con : this.getConnections()){
-                    if (con.getOtherNode(this.getHost()).equals(to))
-                        desConnection = con;
-                    if (con.getOtherNode(this.getHost()).getSatelliteType().contains("MEO")
-                    		&& isRightConnection(msg, con))
-                        MEOConnectionList.add(con);
-                }
-                if (MEOConnectionList.isEmpty()){
-                	//TODO
-                	System.out.println(this.getHost()+"  本LEO节点孤立，没有被MEO覆盖");
-                	break;
-                }
-                //目的作为MEO节点，先检查是否在通信范围之内可以直接转发
-                if (desConnection != null){
-                    DTNHost nextHop = desConnection.getOtherNode(this.getHost());
-                    List<Tuple<Integer, Boolean>> path =
-                            new ArrayList<Tuple<Integer, Boolean>>();
-                    path.add(new Tuple<Integer, Boolean>(nextHop.getAddress(), false));
-                    routerTable.put(to, path);
-                }
-                //否则，通过其它MEO节点进行转发
-                else{
-                    desConnection = MEOConnectionList.get(random.nextInt(MEOConnectionList.size()));
-                    DTNHost nextHop = desConnection.getOtherNode(this.getHost());
-                    List<Tuple<Integer, Boolean>> path =
-                            new ArrayList<Tuple<Integer, Boolean>>();
-                    path.add(new Tuple<Integer, Boolean>(nextHop.getAddress(), false));
-                    routerTable.put(to, path);
-                }
-                break;
-            }
-            case "GEO":{
-            	//TODO
-            	break;
-            }
-        }
+    public List<Tuple<Integer, Boolean>> findPathInSameLEOPlane(DTNHost srcLEO, DTNHost to){
+        List<Tuple<Integer, Boolean>> path =
+                new ArrayList<Tuple<Integer, Boolean>>();//记录最终路径
+        
+        DynamicMultiLayerSatelliteRouter srcRouter = (DynamicMultiLayerSatelliteRouter)srcLEO.getRouter();
+        
+        //如果路径位打开了，就直接找到整个路径，然后写入
+        DTNHost nextHop = srcLEO;
+    	for (int i = 0; i < srcRouter.getSatelliteLinkInfo().
+    			getLEOci().getAllHostsInSamePlane().size() ; i++){//防止无法跳出的错误
+    		nextHop = chooseOneNeighborHostToSendInSameLEOPlane(nextHop, to);
+    		path.add(new Tuple<Integer, Boolean>(nextHop.getAddress(), false));
+    		//已经到达了目的节点，则路径搜索结束
+    		if (nextHop.getAddress() == to.getAddress()){
+    			srcRouter.routerTable.put(to, path); 
+    			break;
+    		}       			
+    	}
+    	System.out.println(this.getHost()+"  同一个平面内的路径： "+path);
+        return path;
     }
-    
+ 
     /**
      * LEO信息发往邻居轨道平面
      * @param to
@@ -1033,7 +1219,7 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     public boolean msgFromLEOForwardToNeighborPlane(Message msg, DTNHost to){
     	
     	int destinationSerialNumberOfPlane = to.getAddress()/LEO_NROF_S_EACHPLANE + 1;
-    	System.out.println("to plane   "+destinationSerialNumberOfPlane);
+    	System.out.println("forward to neighbor plane   "+destinationSerialNumberOfPlane);
     	List<DTNHost> allCommunicationNodes = new ArrayList<DTNHost>();
     	//找出所有目的节点轨道平面上的可以支持跨平面通信的卫星
     	for (DTNHost h : this.CommunicationNodesList.keySet()){
@@ -1049,6 +1235,7 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
                         new ArrayList<Tuple<Integer, Boolean>>();
                 path.add(new Tuple<Integer, Boolean>(h.getAddress(), false));
                 routerTable.put(to, path);
+                System.out.println(this.getHost()+"  同一个平面内的路径： "+path);
                 return true;
     		}
     	}   
@@ -1056,18 +1243,47 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     	return false;
     }
     /**
+     * find the nearest communication LEO nodes in the same orbit plane
+     * @param LEO
+     * @return
+     */
+    public DTNHost findNearestCommunicationLEONodes(DTNHost LEO){
+    	if (LEO.getRouter().CommunicationSatellitesLabel)
+    		return LEO;
+    	int min = Integer.MAX_VALUE;
+    	DTNHost minHost = null;
+    	//取出本轨道平面内所有的通信节点
+    	for (DTNHost cLEO : ((SatelliteMovement)LEO.getMovementModel()).
+    			getSatelliteLinkInfo().getLEOci().getAllCommunicationNodes()){
+    		int distance = Math.abs(cLEO.getAddress() - LEO.getAddress());
+    		if (distance < min){
+    			min = distance;
+    			minHost = cLEO;
+    		}
+    		else{
+    			if (distance == min && random.nextBoolean()){
+	    			min = distance;
+	    			minHost = cLEO;
+    			}
+    		}
+    	}
+    	return minHost;
+    }
+    /**
      * 执行从LEO信息交由MEO转发
      * @param to
      */
-    public void msgFromLEOForwardedByMEO(Message msg, DTNHost to){
+    public void msgFromCommunicationLEOForwardedByMEO(Message msg, DTNHost to){
     	LEOclusterInfo LEOci = this.getSatelliteLinkInfo().getLEOci();
     	
-    	if (LEOci.updateManageHosts(msg).isEmpty()){
-            System.out.println(this.getHost()+" LEO 孤立！  "+msg);
+    	if (this.getHost().getRouter().CommunicationSatellitesLabel &&
+    			LEOci.updateManageHosts(msg).isEmpty()){
+            System.out.println(this.getHost()+" 通信节点LEO 孤立！没有MEO连接！  "+msg);
     		return;
     	}
+    	   	
     	if (((SatelliteMovement)to.getMovementModel()).getSatelliteLinkInfo().getLEOci() == null){
-    		System.out.println(" not initiliation LEOci!"+to);
+    		System.out.println(msg+" not initiliation LEOci! "+to);
     		throw new SimError("not initiliation LEOci!");
     		//return;
     	}
@@ -1075,149 +1291,33 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     	/**采用最短路径搜索算法的变种来找最优路径**/
         //获取LEO通过MEO网络到达目的LEO的拓扑
         //改造的最短路径算法，用于特殊场景，需要指定出发源节点，并给定网络拓扑
-        shortestPathSearch(msg, this.getHost(), getLEOtoLEOThroughMEOTopology(msg, this.getHost(), to));
+    	
+        //shortestPathSearch(msg, this.getHost(), getLEOtoLEOThroughMEOTopology(msg, this.getHost(), to));
+        
+    	//找到所有MEO节点
+        List<DTNHost> hostsList = findMEOHosts();
+        DTNHost nearestCLEOtoDestination = findNearestCommunicationLEONodes(to);
+        hostsList.add(nearestCLEOtoDestination);
+        hostsList.add(this.getHost());
+        /*一定是从通信节点发送到MEO进行转发*/
+        shortestPathSearch(msg, nearestCLEOtoDestination, hostsList);//搜索得到去王离目的节点最近的通信节点的路径
     	/**采用最短路径搜索算法的变种来找最优路径**/
+        
+        List<Tuple<Integer, Boolean>> lastPath = findPathInSameLEOPlane(nearestCLEOtoDestination, to);
     	
-    	if (this.routerTable.containsKey(to)){
-    		System.out.println("搜索到通过MEO转发的最短路径！ to" + to);
+    	if (to.getRouter().CommunicationSatellitesLabel == false 
+    			&& this.routerTable.containsKey(nearestCLEOtoDestination)){
+    		System.out.println(msg+ " 搜索到通过MEO转发的最短路径！ to" + to);
+    		List<Tuple<Integer, Boolean>> path = this.routerTable.get(nearestCLEOtoDestination);
+    		path.addAll(lastPath);
+    		this.routerTable.put(to, path);//添加去目的节点的路径
     		return;
-    	}
-    	
-    	System.out.println("转交给MEO节点进行转发   to" + to);
-        int nrofManageHosts = LEOci.updateManageHosts(msg).size();
-        DTNHost nextHop = LEOci.updateManageHosts(msg).get(random.nextInt(nrofManageHosts));//随机选取一个MEO管理节点帮助转发
-
-        if (nextHop != null){
-            List<Tuple<Integer, Boolean>> path =
-                    new ArrayList<Tuple<Integer, Boolean>>();
-            path.add(new Tuple<Integer, Boolean>(nextHop.getAddress(), false));
-            routerTable.put(to, path);
-        }
+    	}   	    	
     }
     
     /**
-     * Core routing logic for GEO satellite
-     * @param msg
-     */
-    public void GEOroutingPathSearch(Message msg) {
-    	MEOclusterInfo MEOci = this.getSatelliteLinkInfo().getMEOci();
-    	
-        DTNHost to = msg.getTo();// get destination
-        switch (to.getSatelliteType()){
-            case "LEO":{
-                //找到管理此节点的MEO节点，交于它进行转发
-            	/**采用最短路径搜索算法的变种来找最优路径**/          
-                HashMap<DTNHost, List<DTNHost>> topologyInfo = getGEOtoLEOTopology(msg, this.getHost(), to);//optimizedTopologyCalculation(MEOci.MEOList);//localTopologyCalculation(MEOci.MEOList);          
-                List<DTNHost> manageHosts = ((SatelliteMovement)to.getMovementModel()).getSatelliteLinkInfo().getLEOci().updateManageHosts(msg);              
-                //目的节点没有管理节点可达,则直接跳出
-                if (manageHosts.isEmpty()){
-                	System.out.println(to+" has no manage hosts! then "+msg+" transmission failed!");
-                	return;
-                }
-                //调用搜索算法
-            	MEOtoLEOshortestPathSearch(msg, topologyInfo);
-            	if (this.routerTable.containsKey(to))
-            		System.out.println("GEO" + this.getHost() + "找到了最短路径");
-            	/**采用最短路径搜索算法的变种来找最优路径**/
-//                //TODO 不是找的最近的MEO，可以改进
-//                else{
-//                    // check other cluster information managed by other MEO
-//                    DTNHost nextHop = MEOci.findHostInOtherClusterList(to);
-//                    if (nextHop != null){
-//                        List<Tuple<Integer, Boolean>> path =
-//                                new ArrayList<Tuple<Integer, Boolean>>();
-//                        path.add(new Tuple<Integer, Boolean>(nextHop.getAddress(), false));
-//                        routerTable.put(to, path);
-//                    }
-//                }
-                break;
-            }
-            case "MEO":{
-                shortestPathSearch(msg, this.getHost(), getGEOtoMEOTopology(this.getHost(), to));
-                //shortestPathSearch(msg, MEOci.getMEOList());
-                break;
-            }
-            case "GEO":{            	
-            	shortestPathSearch(msg, this.getHost(), getGEOtoGEOTopology(to));
-            	break;
-            }
-        }
-    }
-    
-    /**
-     * Core routing logic for MEO satellite
-     * @param msg
-     */
-    public void MEOroutingPathSearch(Message msg) {
-    	MEOclusterInfo MEOci = this.getSatelliteLinkInfo().getMEOci();   	
-        DTNHost to = msg.getTo();// get destination
-        switch (to.getSatelliteType()){
-            case "LEO":{
-                //是否处于本节点管理簇当中
-            	//System.out.println(this.getHost()+" cluster list: "+MEOci.getClusterList());
-                if (MEOci.getClusterList().contains(to)){
-                    //是的话，看是否直接相连，否则就等待
-                	Connection con = this.findConnection(to.getAddress(), msg);
-                	if (con != null){
-                        List<Tuple<Integer, Boolean>> path =
-                                new ArrayList<Tuple<Integer, Boolean>>();
-                        path.add(new Tuple<Integer, Boolean>(to.getAddress(), false));
-                        routerTable.put(to, path);
-                        return;//找到路径，返回
-                	}
-                }
-                //否则找到管理此节点的MEO节点，交于它进行转发
-            	/**采用最短路径搜索算法的变种来找最优路径**/          
-                HashMap<DTNHost, List<DTNHost>> topologyInfo = getMEOtoLEOTopology(msg, this.getHost(), to);//optimizedTopologyCalculation(MEOci.MEOList);//localTopologyCalculation(MEOci.MEOList);          
-                List<DTNHost> manageHosts = ((SatelliteMovement)to.getMovementModel()).getSatelliteLinkInfo().getLEOci().updateManageHosts(msg);              
-                //目的节点没有管理节点可达,则直接跳出
-                if (manageHosts.isEmpty()){
-                	System.out.println("  "+to+" has no manage hosts! ");
-                	return;
-                }
-                //调用搜索算法
-            	MEOtoLEOshortestPathSearch(msg, topologyInfo);
-            	if (this.routerTable.containsKey(to))
-            		System.out.println("MEO找到了最短路径");
-            	/**采用最短路径搜索算法的变种来找最优路径**/
-//                //TODO 不是找的最近的MEO，可以改进
-//                else{
-//                    // check other cluster information managed by other MEO
-//                    DTNHost nextHop = MEOci.findHostInOtherClusterList(to);
-//                    if (nextHop != null){
-//                        List<Tuple<Integer, Boolean>> path =
-//                                new ArrayList<Tuple<Integer, Boolean>>();
-//                        path.add(new Tuple<Integer, Boolean>(nextHop.getAddress(), false));
-//                        routerTable.put(to, path);
-//                    }
-//                }
-                break;
-            }
-            case "MEO":{
-//                //check the neighbors first
-//                for (Connection con : this.getConnections()){
-//                    DTNHost neighborNode = con.getOtherNode(this.getHost());
-//                    if (to == neighborNode){
-//                        List<Tuple<Integer, Boolean>> path =
-//                                new ArrayList<Tuple<Integer, Boolean>>();
-//                        path.add(new Tuple<Integer, Boolean>(neighborNode.getAddress(), false));
-//                        routerTable.put(to, path);
-//                    }
-//                }
-//                //if not, then check all other MEO nodes
-                //改造的最短路径算法，用于特殊场景，需要指定出发源节点，并给定网络拓扑
-                shortestPathSearch(msg, this.getHost(), getMEOtoMEOTopology(this.getHost()));
-                //shortestPathSearch(msg, MEOci.getMEOList());
-                break;
-            }
-            case "GEO":{
-            	shortestPathSearch(msg, this.getHost(), getMEOtoGEOTopology(this.getHost(), to));
-            }
-        }
-    }
-    /**
-     * 每一个MEO节点的邻居返回4个节点，同一轨道内的相邻两个节点，邻居轨道的两个最近节点，
-     * 从而计算出整体的拓扑
+     * 先得到起始LEO到最近通信LEO的路径，再得到通信LEO到MEO以及MEO层的拓扑，最后得到目的LEO到其最近通信LEO的拓扑，组合在一起
+     * 每一个MEO节点的邻居返回4个节点，同一轨道内的相邻两个节点，邻居轨道的两个最近节点，从而计算出整体的拓扑
      * @param startMEO 起始点
      * @param endMEO   目的节点
      * @return
@@ -1225,25 +1325,27 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     public HashMap<DTNHost, List<DTNHost>> getLEOtoLEOThroughMEOTopology(Message msg, DTNHost startLEO, DTNHost endLEO){
     	HashMap<DTNHost, List<DTNHost>> topologyInfo = new HashMap<DTNHost, List<DTNHost>>();
     	
-    	//如果是动态分簇路由会执行更新操作，如果是静态分簇路由则直接返回事先规定的MEO管理节点
-    	List<DTNHost> manageHosts = ((SatelliteMovement)endLEO.getMovementModel()).
-    			getSatelliteLinkInfo().getLEOci().updateManageHosts(msg);
-    	if (manageHosts.isEmpty())
-    		return topologyInfo;//返回为空
-    	topologyInfo = getMEOtoLEOTopology(msg, manageHosts.get(0), endLEO);
+//    	//如果是动态分簇路由会执行更新操作，如果是静态分簇路由则直接返回事先规定的MEO管理节点
+//    	List<DTNHost> manageHosts = ((SatelliteMovement)endLEO.getMovementModel()).
+//    			getSatelliteLinkInfo().getLEOci().updateManageHosts(msg);
+//    	if (manageHosts.isEmpty())
+//    		return topologyInfo;//返回为空
+    	   	
+    	topologyInfo = getMEOtoLEOTopology(msg, endLEO);
+    	/**找到startLEO的最近通信节点，用于与MEO进行通信,并添加相应的拓扑**/ 	
+    	topologyInfo.putAll(getLEOtoNearestCommunicationLEOTopology(startLEO));
     	
-    	for (DTNHost MEO : manageHosts){
-    		List<DTNHost> list = topologyInfo.get(MEO);  	
-            if (list == null) {
-            	list = new ArrayList<DTNHost>();
-                list.add(startLEO);
-            } else {
-            	list.add(startLEO);
-            }
-    	}
+//    	for (DTNHost MEO : manageHosts){
+//    		List<DTNHost> list = topologyInfo.get(MEO);  	
+//            if (list == null) {
+//            	list = new ArrayList<DTNHost>();
+//                list.add(startLEO);
+//            } else {
+//            	list.add(startLEO);
+//            }
+//    	}
     	return topologyInfo;
-    }
-    
+    }   
     /**
      * 每一个GEO和MEO节点的邻居返回4个节点，同一轨道内的相邻两个节点，邻居轨道的两个最近节点，
      * 从而计算出整体的拓扑
@@ -1362,8 +1464,10 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
      * @return
      */
     public HashMap<DTNHost, List<DTNHost>> getGEOtoLEOTopology(Message msg, DTNHost sGEO, DTNHost endLEO){
+    	DTNHost nearestCLEO = this.findNearestCommunicationLEONodes(endLEO);
+    	
     	HashMap<DTNHost, List<DTNHost>> topologyInfo = new HashMap<DTNHost, List<DTNHost>>();
-    	LEOclusterInfo endLEOci = ((SatelliteMovement)endLEO.getMovementModel()).getSatelliteLinkInfo().getLEOci();
+    	LEOclusterInfo nearestCLEOci = ((SatelliteMovement)nearestCLEO.getMovementModel()).getSatelliteLinkInfo().getLEOci();
     	GEOclusterInfo sGEOci = ((SatelliteMovement)sGEO.getMovementModel()).getSatelliteLinkInfo().getGEOci();
 
     	topologyInfo = getMEOtoMEOTopology(this.findMEOHosts());//首先添加MEO层的所有链路
@@ -1376,9 +1480,12 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
             } else {
             	list.add(sGEO);
             }
-    	}	
+    	}
+    	
+    	topologyInfo.putAll(getGEOtoGEOTopology(sGEO));//添加GEO层的拓扑
+    	
     	//拓扑中添加MEO到目的LEO的链路
-    	for (DTNHost MEO : endLEOci.updateManageHosts(msg)){
+    	for (DTNHost MEO : nearestCLEOci.updateManageHosts(msg)){
     		List<DTNHost> list = topologyInfo.get(MEO);  	
             if (list == null) {
             	list = new ArrayList<DTNHost>();
@@ -1387,6 +1494,8 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
             	list.add(endLEO);
             }
     	}	
+    	//添加LEO到MEO的链路
+    	topologyInfo.put(nearestCLEO, nearestCLEOci.updateManageHosts(msg));
     	return topologyInfo;
     }
     /**
@@ -1416,10 +1525,19 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
      * @param endMEO   目的节点
      * @return
      */
-    public HashMap<DTNHost, List<DTNHost>> getMEOtoMEOTopology(DTNHost sMEO){
+    public HashMap<DTNHost, List<DTNHost>> getMEOtoMEOTopology(){
+    	if (MEO_TOTAL_SATELLITES <= 0)
+    		return null;
+    	//先找到一个MEO节点
+    	DTNHost sMEO = null;
+    	for (DTNHost h : this.getHosts()){
+    		if (h.getSatelliteType().contains("MEO"))
+    			sMEO = h;
+    	}
     	MEOclusterInfo sMEOci = ((SatelliteMovement)sMEO.getMovementModel()).getSatelliteLinkInfo().getMEOci();
     	
     	HashMap<DTNHost, List<DTNHost>> topologyInfo = new HashMap<DTNHost, List<DTNHost>>();
+    	//对每一个MEO节点，添加其相邻链路，从而构成MEO层的拓扑
     	for (DTNHost MEO : sMEOci.getMEOList()){
     		MEOclusterInfo MEOci = ((SatelliteMovement)MEO.getMovementModel()).getSatelliteLinkInfo().getMEOci();
     		List<DTNHost> neighborNodes = new ArrayList<DTNHost>();
@@ -1432,31 +1550,86 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     	return topologyInfo;
     }
     /**
+     * 获取本LEO节点到最近的通信LEO节点的拓扑
+     * @return
+     */
+    public HashMap<DTNHost, List<DTNHost>> getLEOtoNearestCommunicationLEOTopology(DTNHost src){
+    	HashMap<DTNHost, List<DTNHost>> topologyInfo = new HashMap<DTNHost, List<DTNHost>>();
+    	
+    	DTNHost startCommunicationLEO = findNearestCommunicationLEONodes(src);  
+    	//如果自己不是通信节点，先添加到通信节点的路径
+    	if (!(startCommunicationLEO.getAddress() == src.getAddress())){
+    		List<Tuple<Integer, Boolean>> pathTocLEO = 
+    				findPathInSameLEOPlane(src, startCommunicationLEO);//找到前往同一平面上通信节点的路径
+        	
+        	int size = pathTocLEO.size();
+        	DTNHost previousHop = src;
+        	//前行添加拓扑中的链路
+        	for (int index = 0; index < size; index++){       		
+        		Tuple<Integer, Boolean> t = pathTocLEO.get(index);
+        		List<DTNHost> links = new ArrayList<DTNHost>();
+        		DTNHost thisHop = findHostByAddress(t.getKey());
+        		links.add(thisHop);//添加一跳的链路
+        		if (!(index + 1 >= size))
+        			links.add(previousHop);//如果是中间节点，需要添加双向连接链路
+        		topologyInfo.put(previousHop, links);
+        		previousHop = thisHop;
+        	}
+    	}
+    	return topologyInfo;
+    }
+    /**
      * 每一个MEO节点的邻居返回4个节点，同一轨道内的相邻两个节点，邻居轨道的两个最近节点，
      * 从而计算出整体的拓扑
      * @param startMEO 起始MEO点
      * @param endMEO   目的LEO节点
      * @return
      */
-    public HashMap<DTNHost, List<DTNHost>> getMEOtoLEOTopology(Message msg, DTNHost sMEO, DTNHost endLEO){
+    public HashMap<DTNHost, List<DTNHost>> getMEOtoLEOTopology(Message msg, DTNHost endLEO){
     	HashMap<DTNHost, List<DTNHost>> topologyInfo = new HashMap<DTNHost, List<DTNHost>>();
     	LEOclusterInfo endLEOci = ((SatelliteMovement)endLEO.getMovementModel()).getSatelliteLinkInfo().getLEOci();
     	
-    	topologyInfo = getMEOtoMEOTopology(sMEO);
+    	topologyInfo = getMEOtoMEOTopology();
+    
+    	//考虑到MEO节点只能与通信LEO节点之间进行通信
+    	topologyInfo.putAll(getLEOtoNearestCommunicationLEOTopology(endLEO));//找到目的LEO到其最近通信LEO节点之间的拓扑，并进行添加
     	
-    	//拓扑中添加MEO到目的LEO的链路
-    	for (DTNHost MEO : endLEOci.updateManageHosts(msg)){
-    		List<DTNHost> list = topologyInfo.get(MEO);  	
-            if (list == null) {
-            	list = new ArrayList<DTNHost>();
-                list.add(endLEO);
-            } else {
-            	list.add(endLEO);
-            }
-    	}	
+//    	//拓扑中添加MEO到目的LEO的链路
+//    	for (DTNHost MEO : endLEOci.updateManageHosts(msg)){
+//    		List<DTNHost> list = topologyInfo.get(MEO);  	
+//            if (list == null) {
+//            	list = new ArrayList<DTNHost>();
+//                list.add(endLEO);
+//            } else {
+//            	list.add(endLEO);
+//            }
+//    	}	
     	return topologyInfo;
     }
+    /**
+     * 每一个MEO节点的邻居返回4个节点，同一轨道内的相邻两个节点，邻居轨道的两个最近节点，
+     * 从而计算出整体的拓扑
+     * @param startMEO 起始MEO点
+     * @param endMEO   目的LEO节点
+     * @return
+     */
+    public HashMap<DTNHost, List<DTNHost>> getMEOtoCommunicationLEOTopology(Message msg, DTNHost endLEO){
+    	if (!endLEO.getRouter().CommunicationSatellitesLabel)
+    		throw new SimError(" not a communication LEO! ");
+    	HashMap<DTNHost, List<DTNHost>> topologyInfo = new HashMap<DTNHost, List<DTNHost>>();
+    	
+    	topologyInfo = getMEOtoMEOTopology();
     
+    	//获取目的通信LEO节点的管理MEO节点列表，动态或者静态
+    	List<DTNHost> manageMEO = 
+    			((SatelliteMovement)endLEO.getMovementModel()).getSatelliteLinkInfo().getLEOci().updateManageHosts(msg);
+    	//添加MEO到目的通信LEO节点的链路
+    	topologyInfo.put(endLEO , manageMEO);
+    	for (DTNHost MEO : manageMEO){
+    		topologyInfo.get(MEO).add(endLEO);
+    	}
+    	return topologyInfo;
+    }
     /**
      * Bubble sort algorithm
      *
@@ -1567,7 +1740,7 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
         Message m = t.getKey();
         Connection con = t.getValue();
         
-//        System.out.println("当前使用的链路类型为：" + con.getLinkType() + "链路传输速度为：" + con.getSpeed());
+        System.out.println(m+"  "+SimClock.getTime()+"  当前使用的链路类型为：" + con.getLinkType() + "链路传输速度为：" + con.getSpeed());
         
         int retVal = startTransfer(m, con);
         if (retVal == RCV_OK) {  //accepted a message, don't try others
@@ -1647,14 +1820,14 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
         return false;
     }
 
-    /**
-     * 此重写函数保证在传输完成之后，源节点的信息从messages缓存中删除
-     */
-    @Override
-    protected void transferDone(Connection con) {
-        String msgId = con.getMessage().getId();
-        removeFromMessages(msgId);
-    }
+//    /**
+//     * 此重写函数保证在传输完成之后，源节点的信息从messages缓存中删除
+//     */
+//    @Override
+//    protected void transferDone(Connection con) {
+//        String msgId = con.getMessage().getId();
+//        removeFromMessages(msgId);
+//    }
 
     /**
      * get all satellite nodes info in the movement model
@@ -1705,6 +1878,18 @@ public class DynamicMultiLayerSatelliteRouter extends ActiveRouter {
     			MEOHosts.add(h);
     	}
     	return MEOHosts;
+    }
+    /**
+     * find all GEO hosts
+     * @return
+     */
+    public List<DTNHost> findGEOHosts(){
+    	List<DTNHost> GEOHosts = new ArrayList<DTNHost>();
+    	for (DTNHost h : getHosts()){
+    		if (h.getSatelliteType().contains("GEO"))
+    			GEOHosts.add(h);
+    	}
+    	return GEOHosts;
     }
     /**
      * if the connection type is the matched with this type of message
