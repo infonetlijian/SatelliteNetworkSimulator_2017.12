@@ -600,27 +600,20 @@ public abstract class ActiveRouter extends MessageRouter {
 
 			/* probability of interrupt */
 			String Id = con.getMessage().getId();
-			if(this.messages.get(Id) != null){
-				boolean Interrupt = con.RandomInterrupt();  
-				if(Interrupt){
-					/** 仍然具有重传次数，则重传次数减1，否则链路中断并丢弃消息 */
-					int time = (int)this.messages.get(Id).getProperty(RETRANS_TIME);
-					if (time <= 0) {
-						this.deleteMessage(Id, false);
-					} else {		
-						this.messages.get(Id).updateProperty(RETRANS_TIME, time-1);
-					}
+			boolean Interrupt = con.RandomInterrupt();  
+			if(Interrupt){
+				/** 仍然具有重传次数，则重传次数减1，否则链路中断并丢弃消息 */
+				int time = (int)this.messages.get(Id).getProperty(RETRANS_TIME);
+				if (time <= 0) {
+					this.deleteMessage(Id, false);
+				} else {		
+					this.messages.get(Id).updateProperty(RETRANS_TIME, time-1);
 				}
-			}else{
-//				System.out.println("当前节点为："+this.getHost()+"缓存中不存在消息：" + Id  + " 当前链路为："+con);
-//				出现这个问题是由于具有多个链路存在，但是只选择了一条链路用于传输消息，传输完成之后就将消息删除了，但是其他的链路还继续尝试着发送消息！！！
 			}
-
 			
 			/* finalize ready transfers */
 			if (con.isMessageTransferred()) {
 				if (con.getMessage() != null) {
-//					System.out.println("当前节点为："+this.getHost()+" 删除的消息为："+Id + " 当前链路为："+con);
 					transferDone(con);
 					con.finalizeTransfer();
 				} /* else: some other entity aborted transfer */
